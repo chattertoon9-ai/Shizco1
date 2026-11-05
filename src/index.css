@@ -1,0 +1,132 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-urdu: 'Noto Nastaliq Urdu', 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+}
+
+/* Custom subtle scrollbars for high-density tables and timelines */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(160, 160, 160, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 160, 160, 0.4);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================================
+   A4 PRINT MEDIA QUERIES FOR INVOICES, RFQ TENDERS & SALARY PAYSLIPS
+   ========================================================================= */
+@page {
+  size: A4 portrait;
+  margin: 8mm 10mm;
+}
+
+@media print {
+  /* Set document to pure white and black typography for crisp A4 output */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Automatically hide all non-printable navigation, buttons, and backgrounds */
+  header,
+  nav,
+  aside,
+  footer,
+  .print\:hidden,
+  .no-print,
+  .print-hide,
+  button,
+  [role="dialog"] > div:first-child:not(.printable-a4-document),
+  .fixed.bottom-6.right-6 {
+    display: none !important;
+  }
+
+  /* Unhide printable modal container without dark overlay or backdrop blur */
+  .fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* A4 Document Container: 100% full printable area and clean formatting */
+  .printable-a4-document,
+  .a4-print-document {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+    box-sizing: border-box !important;
+  }
+
+  /* Table styling for clean full-width printing */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  th, td {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Prevent awkward splits on signature and totals blocks */
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

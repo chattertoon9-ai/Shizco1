@@ -1,0 +1,6 @@
+{
+  "name": "Al Asad Constructors",
+  "description": "Enterprise civil engineering and construction management system with project deadlines, snag punch-lists, and role-based sub-user rights administration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
