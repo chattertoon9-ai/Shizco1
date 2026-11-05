@@ -69,7 +69,7 @@ export const INITIAL_USERS: AuthUser[] = [
     name: 'Engr. Tariq Mehmood',
     nameUrdu: 'انجینئر طارق محمود',
     email: 'admin@alasad.com',
-    password: 'admin',
+    password: 'Asad@123',
     role: 'admin',
     designation: 'Project Director & Chief Engineer',
     avatarColor: 'bg-gradient-to-tr from-blue-700 to-indigo-600',
