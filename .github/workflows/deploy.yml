@@ -1,9 +1,8 @@
-name: Deploy Meimar Construction Tracker to GitHub Pages
+name: Deploy Al Asad Constructors to GitHub Pages
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
