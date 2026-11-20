@@ -18,6 +18,7 @@ import {
   FileCheck2,
   CalendarClock
 } from 'lucide-react';
+import commercialSiteImg from '../assets/images/construction_commercial_site_1793460327058.jpg';
 
 interface LandingLoginPortalProps {
   onLoginSuccess?: () => void;
@@ -56,7 +57,7 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl overflow-hidden border border-blue-600/40 bg-slate-900 flex items-center justify-center p-0.5 shadow-xl shadow-blue-950/60 shrink-0">
             <img 
-              src="/logo.jpg" 
+              src="logo.jpg" 
               alt="Al Asad Constructors" 
               className="w-full h-full object-cover rounded-lg"
             />
@@ -172,7 +173,7 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
             {/* Site Construction Image Badge */}
             <div className="relative rounded-2xl overflow-hidden border border-blue-900/40 shadow-2xl max-w-xl group">
               <img 
-                src="/src/assets/images/construction_commercial_site_1793460327058.jpg" 
+                src={commercialSiteImg} 
                 alt="Active Construction Site" 
                 className="w-full h-36 object-cover opacity-60 group-hover:opacity-75 transition-opacity"
               />
@@ -203,7 +204,7 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
               <div className="text-center space-y-2 mb-6">
                 <div className="w-16 h-16 mx-auto rounded-2xl overflow-hidden border-2 border-blue-500/40 bg-slate-950 p-1 shadow-xl shadow-blue-900/40 flex items-center justify-center">
                   <img 
-                    src="/logo.jpg" 
+                    src="logo.jpg" 
                     alt="Al Asad Constructors" 
                     className="w-full h-full object-cover rounded-xl"
                   />

@@ -1,4 +1,7 @@
 import { ConstructionTask, DailySiteLog, MaterialLedgerItem, Project, SnagItem, LaborEntry, AccountTransaction, TaxInvoice, RFQDocument } from '../types';
+import commercialSiteImg from '../assets/images/construction_commercial_site_1793460327058.jpg';
+import residentialVillaImg from '../assets/images/construction_residential_villa_1793460328341.jpg';
+import sitePlanImg from '../assets/images/construction_site_plan_1793460328422.jpg';
 
 export const INITIAL_PROJECTS: Project[] = [
   {
@@ -24,7 +27,7 @@ export const INITIAL_PROJECTS: Project[] = [
     },
     startDate: '2026-03-01',
     targetEndDate: '2027-04-30',
-    bannerImage: '/src/assets/images/construction_commercial_site_1793460327058.jpg',
+    bannerImage: commercialSiteImg,
     description: '7-story commercial retail and office complex with two basement parking decks, post-tensioned RCC frame, and glass curtain wall façade.'
   },
   {
@@ -50,7 +53,7 @@ export const INITIAL_PROJECTS: Project[] = [
     },
     startDate: '2026-01-15',
     targetEndDate: '2026-11-30',
-    bannerImage: '/src/assets/images/construction_residential_villa_1793460328341.jpg',
+    bannerImage: residentialVillaImg,
     description: '1 Kanal modern minimalist residence featuring thermal insulated cavities, double glazed aluminum windows, and Spanish porcelain tile flooring.'
   },
   {
@@ -76,7 +79,7 @@ export const INITIAL_PROJECTS: Project[] = [
     },
     startDate: '2026-08-01',
     targetEndDate: '2027-08-15',
-    bannerImage: '/src/assets/images/construction_site_plan_1793460328422.jpg',
+    bannerImage: sitePlanImg,
     description: '45,000 sq ft industrial pre-engineered steel warehouse with heavy duty floor slabs for high-bay forklift storage.'
   }
 ];

@@ -1,4 +1,4 @@
-# Meimar BuildTrack (معمار تعمیراتی ٹریکر)
+# Al Asad Constructors — Construction Management System
 
 A professional construction project and task tracking application with Kanban board, Gantt chart schedule, daily site logs (Roznamcha), materials ledger, and snag/punch list management. Built with React 19, TypeScript, Vite, and Tailwind CSS.
 
@@ -17,8 +17,8 @@ A professional construction project and task tracking application with Kanban bo
 
 1. Clone repository:
 ```bash
-git clone https://github.com/<your-username>/meimar-construction-app.git
-cd meimar-construction-app
+git clone https://github.com/chattertoon9-ai/Shizco1.git
+cd Shizco1
 ```
 
 2. Install dependencies:

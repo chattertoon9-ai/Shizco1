@@ -3,6 +3,9 @@ import { useProject } from '../context/ProjectContext';
 import { ProjectPhase } from '../types';
 import { translations, getPhaseName } from '../utils/translations';
 import { X, Building2, MapPin, Wallet, Calendar } from 'lucide-react';
+import commercialSiteImg from '../assets/images/construction_commercial_site_1793460327058.jpg';
+import residentialVillaImg from '../assets/images/construction_residential_villa_1793460328341.jpg';
+import sitePlanImg from '../assets/images/construction_site_plan_1793460328422.jpg';
 
 interface NewProjectModalProps {
   isOpen: boolean;
@@ -27,9 +30,9 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
   // Default images to select from
   const bannerOptions = [
-    '/src/assets/images/construction_commercial_site_1793460327058.jpg',
-    '/src/assets/images/construction_residential_villa_1793460328341.jpg',
-    '/src/assets/images/construction_site_plan_1793460328422.jpg',
+    commercialSiteImg,
+    residentialVillaImg,
+    sitePlanImg,
   ];
   const [selectedBanner, setSelectedBanner] = useState(bannerOptions[0]);
 
