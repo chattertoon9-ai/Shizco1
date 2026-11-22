@@ -2,24 +2,21 @@ import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { translations } from '../utils/translations';
 import { NotificationCenter } from './NotificationCenter';
-import { 
-  Building2, 
-  Kanban, 
-  CalendarRange, 
-  ClipboardList, 
-  Package, 
-  AlertCircle, 
-  Github, 
-  Plus, 
-  Languages, 
-  Download, 
-  Upload, 
-  ShieldCheck, 
-  User, 
-  LogOut, 
+import { ActiveTab, TaxSection, ManpowerSection } from '../types';
+import {
+  Kanban,
+  CalendarRange,
+  ClipboardList,
+  Package,
+  AlertCircle,
+  Plus,
+  Languages,
+  Download,
+  Upload,
+  ShieldCheck,
+  LogOut,
   LogIn,
   Sparkles,
-  MapPin,
   Bell,
   Users,
   Home,
@@ -31,8 +28,14 @@ import {
   Scale,
   Wifi,
   WifiOff,
-  RefreshCw
+  RefreshCw,
+  UserCheck,
+  Banknote,
+  Receipt,
+  FileText,
+  BookOpen
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface NavbarProps {
   onOpenNewTask: () => void;
@@ -40,17 +43,127 @@ interface NavbarProps {
   onOpenSiteAssistant?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ 
-  onOpenNewTask, 
+interface GroupSubItem {
+  id: ActiveTab;
+  labelEn: string;
+  labelUr: string;
+  icon: LucideIcon;
+  taxSection?: TaxSection;
+  manpowerSection?: ManpowerSection;
+}
+
+interface NavGroup {
+  key: string;
+  labelEn: string;
+  labelUr: string;
+  icon: LucideIcon;
+  adminOnly?: boolean;
+  defaultTab: ActiveTab;
+  defaultTaxSection?: TaxSection;
+  defaultManpowerSection?: ManpowerSection;
+  matchTabs: ActiveTab[];
+  items?: GroupSubItem[];
+}
+
+// Grouped navigation — 7 main groups instead of 13 separate tabs.
+// Every old tab still exists one click inside its group; nothing was deleted.
+// GitHub Guide is intentionally NOT in the nav (file kept, link removed).
+const NAV_GROUPS: NavGroup[] = [
+  {
+    key: 'hub',
+    labelEn: 'Module Hub',
+    labelUr: 'ماڈیول ہب',
+    icon: Home,
+    defaultTab: 'home',
+    matchTabs: ['home']
+  },
+  {
+    key: 'hr',
+    labelEn: 'HR',
+    labelUr: 'ایچ آر',
+    icon: HardHat,
+    defaultTab: 'manpower',
+    defaultManpowerSection: 'all',
+    matchTabs: ['manpower'],
+    items: [
+      { id: 'manpower', labelEn: 'Attendance', labelUr: 'حاضری', icon: UserCheck, manpowerSection: 'attendance' },
+      { id: 'manpower', labelEn: 'Salary', labelUr: 'تنخواہ', icon: Banknote, manpowerSection: 'salary' },
+      { id: 'manpower', labelEn: 'Manpower', labelUr: 'افرادی قوت', icon: Users, manpowerSection: 'all' }
+    ]
+  },
+  {
+    key: 'accounts',
+    labelEn: 'ACCOUNTS',
+    labelUr: 'اکاؤنٹس',
+    icon: Wallet,
+    defaultTab: 'invoices_rfq',
+    defaultTaxSection: 'invoices',
+    matchTabs: ['invoices_rfq', 'accounts'],
+    items: [
+      { id: 'invoices_rfq', labelEn: 'Invoice', labelUr: 'انوائس', icon: Receipt, taxSection: 'invoices' },
+      { id: 'invoices_rfq', labelEn: 'RFQ', labelUr: 'آر ایف کیو', icon: FileText, taxSection: 'rfqs' },
+      { id: 'accounts', labelEn: 'Accounts Ledger', labelUr: 'اکاؤنٹس لیجر', icon: BookOpen }
+    ]
+  },
+  {
+    key: 'sitework',
+    labelEn: 'Site Work',
+    labelUr: 'سائٹ ورک',
+    icon: Briefcase,
+    defaultTab: 'projects',
+    matchTabs: ['projects', 'overview', 'gantt', 'daily_logs', 'tasks', 'snags'],
+    items: [
+      { id: 'projects', labelEn: 'Projects', labelUr: 'پروجیکٹس', icon: Briefcase },
+      { id: 'overview', labelEn: 'Executive Overview', labelUr: 'ایگزیکٹو رپورٹ', icon: BarChart3 },
+      { id: 'gantt', labelEn: 'Timeline (Gantt)', labelUr: 'ٹائم لائن', icon: CalendarRange },
+      { id: 'daily_logs', labelEn: 'Daily Log', labelUr: 'روزنامچہ', icon: ClipboardList },
+      { id: 'tasks', labelEn: 'Tasks', labelUr: 'ٹاسکس', icon: Kanban },
+      { id: 'snags', labelEn: 'Snags', labelUr: 'نقائص', icon: AlertCircle }
+    ]
+  },
+  {
+    key: 'logistics',
+    labelEn: 'Logistics',
+    labelUr: 'لوجسٹکس',
+    icon: Package,
+    defaultTab: 'materials',
+    matchTabs: ['materials']
+  },
+  {
+    key: 'fbr',
+    labelEn: 'FBR',
+    labelUr: 'ایف بی آر',
+    icon: Scale,
+    defaultTab: 'tax_compliance',
+    defaultTaxSection: 'calculator',
+    matchTabs: ['tax_compliance']
+  },
+  {
+    key: 'users',
+    labelEn: 'User Management',
+    labelUr: 'صارفین کا انتظام',
+    icon: ShieldCheck,
+    adminOnly: true,
+    defaultTab: 'users',
+    matchTabs: ['users']
+  }
+];
+
+export const Navbar: React.FC<NavbarProps> = ({
+  onOpenNewTask,
   onOpenNewProject,
-  onOpenSiteAssistant 
+  onOpenSiteAssistant
 }) => {
-  const { 
-    activeTab, 
-    setActiveTab, 
-    language, 
-    setLanguage, 
-    exportDataJson, 
+  const {
+    activeTab,
+    setActiveTab,
+    taxSection,
+    setTaxSection,
+    manpowerSection,
+    setManpowerSection,
+    language,
+    setLanguage,
+    exportDataJson,
     importDataJson,
     currentUser,
     isAdmin,
@@ -65,9 +178,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     isSyncing,
     setIsSyncModalOpen
   } = useProject();
-  
+
   const [fileInputRef, setFileInputRef] = useState<HTMLInputElement | null>(null);
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [mobileOpenGroup, setMobileOpenGroup] = useState<string | null>(null);
   const t = translations[language];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,180 +203,135 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  // Primary Navigation items (Modules Hub, Attendance & Salary, Invoices & RFQ, Projects, Tasks, Accounts)
-  const primaryNavItems = [
-    { 
-      id: 'home' as const, 
-      label: language === 'ur' ? 'تمام ٹیبس' : 'Modules Hub', 
-      icon: Home, 
-      matchTabs: ['home'], 
-      adminOnly: false 
-    },
-    { 
-      id: 'manpower' as const, 
-      label: language === 'ur' ? 'حاضری و تنخواہ' : 'Attendance & Salary', 
-      icon: HardHat, 
-      matchTabs: ['manpower'], 
-      adminOnly: false 
-    },
-    { 
-      id: 'tax_compliance' as const, 
-      label: language === 'ur' ? 'انوائسز و آر ایف کیو' : 'Invoices & RFQ', 
-      icon: Scale, 
-      matchTabs: ['tax_compliance', 'invoices_rfq'], 
-      adminOnly: false 
-    },
-    { 
-      id: 'projects' as const, 
-      label: language === 'ur' ? 'پروجیکٹس' : 'Projects', 
-      icon: Briefcase, 
-      matchTabs: ['projects'], 
-      adminOnly: false 
-    },
-    { 
-      id: 'tasks' as const, 
-      label: language === 'ur' ? 'ٹاسکس' : 'Tasks', 
-      icon: Kanban, 
-      matchTabs: ['tasks'], 
-      adminOnly: false 
-    },
-    { 
-      id: 'accounts' as const, 
-      label: language === 'ur' ? 'اکاؤنٹس' : 'Accounts', 
-      icon: Wallet, 
-      matchTabs: ['accounts'], 
-      adminOnly: false 
-    }
-  ];
+  const navigate = (
+    tab: ActiveTab,
+    taxSectionValue?: TaxSection,
+    manpowerSectionValue?: ManpowerSection
+  ) => {
+    if (taxSectionValue) setTaxSection(taxSectionValue);
+    if (manpowerSectionValue) setManpowerSection(manpowerSectionValue);
+    setActiveTab(tab);
+    setOpenGroup(null);
+    setMobileOpenGroup(null);
+  };
 
-  const secondaryNavItems = [
-    { 
-      id: 'overview' as const, 
-      label: language === 'ur' ? 'ایگزیکٹو رپورٹ' : 'Executive Overview', 
-      icon: BarChart3,
-      adminOnly: false
-    },
-    { id: 'gantt' as const, label: t.timeline, icon: CalendarRange, adminOnly: false },
-    { id: 'daily_logs' as const, label: t.dailyLog, icon: ClipboardList, adminOnly: false },
-    { id: 'materials' as const, label: t.materialsBudget, icon: Package, adminOnly: false },
-    { id: 'snags' as const, label: t.snags, icon: AlertCircle, adminOnly: false },
-    { id: 'users' as const, label: t.users, icon: Users, adminOnly: true },
-    { id: 'github_guide' as const, label: t.githubGuide, icon: Github, adminOnly: true },
-  ];
+  const isItemActive = (item: GroupSubItem) => {
+    if (item.taxSection) return activeTab === item.id && taxSection === item.taxSection;
+    if (item.manpowerSection) return activeTab === item.id && manpowerSection === item.manpowerSection;
+    return activeTab === item.id;
+  };
 
-  // Secondary items filtered by admin privileges
-  const filteredSecondaryNavItems = secondaryNavItems.filter(item => !item.adminOnly || isAdmin);
-
-  // Combined deduplicated nav items list for safe rendering (excluding admin tabs for regular users)
-  const allUniqueNavItems = Array.from(
-    new Map([...primaryNavItems, ...secondaryNavItems].map(item => [item.id, item])).values()
-  ).filter(item => !item.adminOnly || isAdmin);
-
-  const isSecondaryActive = filteredSecondaryNavItems.some(item => item.id === activeTab);
+  const visibleGroups = NAV_GROUPS.filter(group => !group.adminOnly || isAdmin);
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-blue-900/30 text-slate-100 shadow-md shadow-black/40">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 text-slate-900 shadow-sm shadow-slate-900/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Bar: 3 zones */}
           <div className="flex items-center justify-between gap-4 lg:gap-6 h-16">
-            
+
             {/* Zone 1: Brand Wordmark with Al Asad Constructors Logo */}
             <div className="flex items-center gap-3 shrink-0">
-              <a 
-                href="#home" 
-                onClick={(e) => { e.preventDefault(); setActiveTab('home'); }}
+              <a
+                href="#home"
+                onClick={(e) => { e.preventDefault(); navigate('home'); }}
                 className="flex items-center gap-2.5 group"
               >
-                <div className="w-10 h-10 rounded-xl overflow-hidden border border-blue-700/40 bg-slate-900 flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/30 group-hover:border-blue-400 transition-colors p-0.5">
-                  <img 
-                    src="/logo.jpg" 
-                    alt="Al Asad Constructors" 
+                <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-white flex items-center justify-center shrink-0 shadow-sm group-hover:border-blue-400 transition-colors p-0.5">
+                  <img
+                    src="logo.jpg"
+                    alt="Al Asad Constructors"
                     className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-blue-300 transition-colors leading-tight whitespace-nowrap">
+                  <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors leading-tight whitespace-nowrap">
                     {language === 'ur' ? 'الاسد کنسٹرکٹرز' : 'Al Asad Constructors'}
                   </span>
-                  <span className="text-[10px] text-emerald-400 font-mono tracking-wider uppercase leading-none mt-0.5 flex items-center gap-1">
-                    <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
+                  <span className="text-[10px] text-emerald-600 font-mono tracking-wider uppercase leading-none mt-0.5 flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
                     {language === 'ur' ? 'سول انجینئرنگ پورٹل' : 'Civil Engineering Portal'}
                   </span>
                 </div>
               </a>
             </div>
 
-            {/* Zone 2: Primary Navigation Tabs (Home, Project, Task, Manpower, Accounts) + More Dropdown */}
-            <nav className="hidden lg:flex items-center gap-4 xl:gap-5 text-sm font-medium text-slate-400">
-              {primaryNavItems.map((item) => {
-                const isActive = (item.matchTabs as readonly string[]).includes(activeTab);
+            {/* Zone 2: Grouped Navigation — 7 main groups with dropdowns */}
+            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2 text-sm font-medium text-slate-600">
+              {visibleGroups.map((group) => {
+                const isActive = group.matchTabs.includes(activeTab);
+                const isOpen = openGroup === group.key;
+                const GroupIcon = group.icon;
+
+                if (!group.items) {
+                  return (
+                    <button
+                      key={group.key}
+                      onClick={() => navigate(group.defaultTab, group.defaultTaxSection, group.defaultManpowerSection)}
+                      className={`flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-all py-2 px-3 rounded-xl border cursor-pointer ${
+                        isActive
+                          ? 'text-white bg-blue-600 border-blue-600 font-bold shadow-md shadow-blue-600/25'
+                          : 'border-transparent hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <GroupIcon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                      <span>{language === 'ur' ? group.labelUr : group.labelEn}</span>
+                      {group.adminOnly && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-mono uppercase bg-amber-100 text-amber-700 border border-amber-200 tracking-wider">
+                          Admin
+                        </span>
+                      )}
+                    </button>
+                  );
+                }
+
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id as any)}
-                    className={`flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-all py-1.5 px-2.5 rounded-lg border cursor-pointer ${
-                      isActive 
-                        ? 'text-white bg-blue-600/20 border-blue-500/50 font-bold shadow-sm shadow-blue-900/20' 
-                        : 'border-transparent hover:text-slate-200 hover:bg-slate-900'
-                    }`}
-                  >
-                    <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
-                    <span>{item.label}</span>
-                    {item.adminOnly && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 tracking-wider">
-                        Admin
-                      </span>
+                  <div key={group.key} className="relative">
+                    <button
+                      onClick={() => setOpenGroup(isOpen ? null : group.key)}
+                      className={`flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-all py-2 px-3 rounded-xl border cursor-pointer ${
+                        isActive
+                          ? 'text-white bg-blue-600 border-blue-600 font-bold shadow-md shadow-blue-600/25'
+                          : isOpen
+                            ? 'text-slate-900 bg-slate-100 border-slate-200'
+                            : 'border-transparent hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <GroupIcon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                      <span>{language === 'ur' ? group.labelUr : group.labelEn}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setOpenGroup(null)}
+                        />
+                        <div className="absolute top-full left-0 mt-2 w-60 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-900/10 p-1.5 z-50 text-sm animate-fadeIn">
+                          {group.items.map(item => {
+                            const active = isItemActive(item);
+                            return (
+                              <button
+                                key={`${item.id}-${item.labelEn}`}
+                                onClick={() => navigate(item.id, item.taxSection, item.manpowerSection)}
+                                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition cursor-pointer ${
+                                  active
+                                    ? 'bg-blue-50 text-blue-700 font-semibold'
+                                    : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                                }`}
+                              >
+                                <item.icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+                                <span>{language === 'ur' ? item.labelUr : item.labelEn}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
                     )}
-                  </button>
+                  </div>
                 );
               })}
-
-              {/* More / Tools Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                  className={`flex items-center gap-1 whitespace-nowrap shrink-0 transition-all py-1.5 px-2.5 rounded-lg border cursor-pointer text-xs ${
-                    isSecondaryActive 
-                      ? 'text-emerald-300 bg-emerald-950/40 border-emerald-600/40 font-semibold' 
-                      : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                  }`}
-                >
-                  <span>{language === 'ur' ? 'مزید ٹولز' : 'More'}</span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-
-                {isMoreMenuOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setIsMoreMenuOpen(false)}
-                    />
-                    <div className="absolute top-full left-0 mt-2 w-52 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl p-1.5 z-50 text-xs animate-fadeIn">
-                      {filteredSecondaryNavItems.map(item => {
-                        const isActive = activeTab === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => {
-                              setActiveTab(item.id);
-                              setIsMoreMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition cursor-pointer ${
-                              isActive 
-                                ? 'bg-blue-600/20 text-blue-400 font-semibold' 
-                                : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-                            }`}
-                          >
-                            <item.icon className="w-4 h-4 text-slate-400" />
-                            <span>{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
             </nav>
 
             {/* Zone 3: Actions (Notifications, Site AI, Role Switcher, Language, Primary CTA) */}
@@ -272,25 +341,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setIsSyncModalOpen(true)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium transition cursor-pointer ${
                   !isOnline
-                    ? 'bg-amber-950/70 border-amber-600/70 text-amber-300 animate-pulse'
+                    ? 'bg-amber-50 border-amber-300 text-amber-700 animate-pulse'
                     : pendingSyncCount > 0
-                    ? 'bg-blue-950/70 border-blue-600/70 text-blue-300'
-                    : 'bg-slate-900 hover:bg-slate-800 border-slate-700/80 text-slate-300 hover:text-white'
+                    ? 'bg-blue-50 border-blue-300 text-blue-700'
+                    : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-600 hover:text-slate-900'
                 }`}
                 title={language === 'ur' ? 'آف لائن کیشے و سنک سینٹر' : 'Offline Access & Sync Center'}
               >
                 {isSyncing ? (
-                  <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+                  <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
                 ) : !isOnline ? (
-                  <WifiOff className="w-3.5 h-3.5 text-amber-400" />
+                  <WifiOff className="w-3.5 h-3.5 text-amber-600" />
                 ) : (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 )}
                 <span className="hidden md:inline">
                   {isSyncing ? 'Syncing...' : !isOnline ? 'Offline' : 'Online'}
                 </span>
                 {pendingSyncCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white">
                     {pendingSyncCount}
                   </span>
                 )}
@@ -299,12 +368,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* In-App Notification Center Bell */}
               <button
                 onClick={() => setIsNotificationCenterOpen(true)}
-                className="relative p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors cursor-pointer"
+                className="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors cursor-pointer"
                 title={language === 'ur' ? 'نوٹیفیکیشن و الرٹس' : 'Deadlines & Snag Alerts'}
               >
-                <Bell className="w-4 h-4 text-slate-300 hover:text-white" />
+                <Bell className="w-4 h-4" />
                 {unreadNotificationsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-slate-950 animate-pulse">
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white animate-pulse">
                     {unreadNotificationsCount}
                   </span>
                 )}
@@ -313,10 +382,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Site AI Assistant Launcher */}
               <button
                 onClick={onOpenSiteAssistant}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/50 rounded-lg border border-emerald-500/30 transition-all cursor-pointer whitespace-nowrap shadow-xs"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-all cursor-pointer whitespace-nowrap"
                 title="Open Gemini AI Site Intelligence with Maps Grounding"
               >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                 <span className="hidden md:inline">AI Site Intelligence</span>
                 <span className="md:hidden">AI</span>
               </button>
@@ -324,44 +393,44 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Language Switch */}
               <button
                 onClick={() => setLanguage(language === 'en' ? 'ur' : 'en')}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700/80 transition-colors whitespace-nowrap cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors whitespace-nowrap cursor-pointer"
                 title="Toggle Urdu / English"
               >
-                <Languages className="w-3.5 h-3.5 text-blue-400" />
+                <Languages className="w-3.5 h-3.5 text-blue-600" />
                 <span>{language === 'en' ? 'اردو' : 'EN'}</span>
               </button>
 
               {/* Hidden File Input for Import */}
-              <input 
-                type="file" 
-                accept=".json" 
-                className="hidden" 
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
                 ref={el => setFileInputRef(el)}
-                onChange={handleFileUpload} 
+                onChange={handleFileUpload}
               />
 
               {/* Backup Export / Import */}
               <button
                 onClick={exportDataJson}
-                className="hidden 2xl:flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700/80 transition-colors whitespace-nowrap cursor-pointer"
+                className="hidden 2xl:flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors whitespace-nowrap cursor-pointer"
                 title="Download JSON data file for backup"
               >
-                <Download className="w-3.5 h-3.5 text-slate-400" />
+                <Download className="w-3.5 h-3.5 text-slate-500" />
                 <span>Backup</span>
               </button>
 
               <button
                 onClick={() => fileInputRef?.click()}
-                className="hidden 2xl:flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700/80 transition-colors whitespace-nowrap cursor-pointer"
+                className="hidden 2xl:flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors whitespace-nowrap cursor-pointer"
                 title="Restore data from JSON file"
               >
-                <Upload className="w-3.5 h-3.5 text-slate-400" />
+                <Upload className="w-3.5 h-3.5 text-slate-500" />
                 <span>Restore</span>
               </button>
 
               {/* User Profile & Role Display (User Switcher restricted to Admin) */}
               {currentUser ? (
-                <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 pr-1.5">
+                <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-xl p-1 pr-1.5">
                   {isAdmin ? (
                     <button
                       onClick={() => setIsLoginModalOpen(true)}
@@ -372,10 +441,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                         A
                       </div>
                       <div className="hidden sm:block">
-                        <div className="text-[11px] font-bold text-white truncate max-w-[90px] leading-tight">
+                        <div className="text-[11px] font-bold text-slate-900 truncate max-w-[90px] leading-tight">
                           {language === 'ur' && currentUser.nameUrdu ? currentUser.nameUrdu : currentUser.name}
                         </div>
-                        <div className="text-[9px] font-mono tracking-wider font-bold text-blue-400">
+                        <div className="text-[9px] font-mono tracking-wider font-bold text-blue-600">
                           ADMIN
                         </div>
                       </div>
@@ -386,10 +455,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                         U
                       </div>
                       <div className="hidden sm:block">
-                        <div className="text-[11px] font-bold text-white truncate max-w-[90px] leading-tight">
+                        <div className="text-[11px] font-bold text-slate-900 truncate max-w-[90px] leading-tight">
                           {language === 'ur' && currentUser.nameUrdu ? currentUser.nameUrdu : currentUser.name}
                         </div>
-                        <div className="text-[9px] font-mono tracking-wider font-bold text-emerald-400">
+                        <div className="text-[9px] font-mono tracking-wider font-bold text-emerald-600">
                           USER
                         </div>
                       </div>
@@ -397,7 +466,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                   <button
                     onClick={logout}
-                    className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors ml-0.5 cursor-pointer"
+                    className="p-1 text-slate-500 hover:text-rose-600 hover:bg-slate-200 rounded transition-colors ml-0.5 cursor-pointer"
                     title={t.logout}
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -406,7 +475,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors whitespace-nowrap cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-900 transition-colors whitespace-nowrap cursor-pointer"
                 >
                   <LogIn className="w-3.5 h-3.5 text-blue-400" />
                   <span>{t.login}</span>
@@ -427,29 +496,42 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Mobile secondary tab strip */}
-          <div className="flex lg:hidden overflow-x-auto gap-2 py-2 border-t border-slate-800/80 text-xs text-slate-400 no-scrollbar">
-            {allUniqueNavItems.map((item: any) => {
-              const isActive = item.matchTabs 
-                ? item.matchTabs.includes(activeTab) 
-                : activeTab === item.id;
+          {/* Mobile group strip — 7 groups, dropdown opens below */}
+          <div className="flex lg:hidden overflow-x-auto gap-2 py-2 border-t border-slate-200 text-xs text-slate-600 no-scrollbar">
+            {visibleGroups.map((group) => {
+              const isActive = group.matchTabs.includes(activeTab);
+              const GroupIcon = group.icon;
+              const isMobileOpen = mobileOpenGroup === group.key;
               return (
                 <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-1 whitespace-nowrap py-1 px-2.5 rounded-lg font-medium cursor-pointer ${
-                    isActive ? 'text-white bg-blue-600/30 border border-blue-500/50 font-bold' : 'hover:text-slate-200 bg-slate-900/60'
+                  key={group.key}
+                  onClick={() => {
+                    if (group.items) {
+                      setMobileOpenGroup(isMobileOpen ? null : group.key);
+                    } else {
+                      navigate(group.defaultTab, group.defaultTaxSection, group.defaultManpowerSection);
+                    }
+                  }}
+                  className={`flex items-center gap-1 whitespace-nowrap py-1.5 px-2.5 rounded-lg font-medium cursor-pointer border shrink-0 ${
+                    isActive
+                      ? 'text-white bg-blue-600 border-blue-600 font-bold'
+                      : isMobileOpen
+                        ? 'text-slate-900 bg-slate-200 border-slate-300'
+                        : 'bg-slate-100 border-slate-200 hover:text-slate-900'
                   }`}
                 >
-                  <item.icon className="w-3.5 h-3.5" />
-                  <span>{item.label}</span>
+                  <GroupIcon className="w-3.5 h-3.5" />
+                  <span>{language === 'ur' ? group.labelUr : group.labelEn}</span>
+                  {group.items && (
+                    <ChevronDown className={`w-3 h-3 transition-transform ${isMobileOpen ? 'rotate-180' : ''}`} />
+                  )}
                 </button>
               );
             })}
             {currentUser && (
               <button
                 onClick={logout}
-                className="flex items-center gap-1 whitespace-nowrap py-1 px-2.5 rounded-lg font-medium text-rose-400 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 cursor-pointer"
+                className="flex items-center gap-1 whitespace-nowrap py-1.5 px-2.5 rounded-lg font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer shrink-0"
                 title={t.logout}
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -457,6 +539,35 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
           </div>
+
+          {/* Mobile group dropdown panel */}
+          {mobileOpenGroup && (() => {
+            const group = visibleGroups.find(g => g.key === mobileOpenGroup);
+            if (!group || !group.items) return null;
+            return (
+              <div className="lg:hidden border-t border-slate-200 py-2 animate-fadeIn">
+                <div className="grid grid-cols-1 gap-1">
+                  {group.items.map(item => {
+                    const active = isItemActive(item);
+                    return (
+                      <button
+                        key={`${item.id}-${item.labelEn}`}
+                        onClick={() => navigate(item.id, item.taxSection, item.manpowerSection)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm transition cursor-pointer ${
+                          active
+                            ? 'bg-blue-50 text-blue-700 font-semibold'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <item.icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+                        <span>{language === 'ur' ? item.labelUr : item.labelEn}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </header>
 

@@ -51,12 +51,14 @@ export const ManpowerView: React.FC = () => {
     isAdmin, 
     hasPermission, 
     addLaborEntry, 
-    deleteLaborEntry 
+    deleteLaborEntry,
+    manpowerSection: subTab,
+    setManpowerSection: setSubTab
   } = useProject();
   const t = translations[language];
 
-  // Attendance & Salary Sub-view state
-  const [subTab, setSubTab] = useState<'all' | 'attendance' | 'salary'>('all');
+  // Attendance & Salary sub-view — shared via context so the nav can land
+  // directly on Attendance, Salary or the full Manpower list (HR group).
   const [activeSlip, setActiveSlip] = useState<LaborEntry | null>(null);
 
   // Filter states

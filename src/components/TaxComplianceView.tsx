@@ -60,13 +60,15 @@ export const TaxComplianceView: React.FC = () => {
     updateRFQStatus,
     addQuotationToRFQ,
     deleteRFQ,
-    setIsLoginModalOpen
+    setIsLoginModalOpen,
+    taxSection: activeSubTab,
+    setTaxSection: setActiveSubTab
   } = useProject();
 
   const t = translations[language];
 
-  // Active sub-module within TaxComplianceView
-  const [activeSubTab, setActiveSubTab] = useState<'invoices' | 'rfqs' | 'calculator'>('invoices');
+  // Active sub-module within TaxComplianceView — shared via context so the
+  // nav can land directly on Invoices (ACCOUNTS) or the Tax calculator (FBR).
 
   // Modals state
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);

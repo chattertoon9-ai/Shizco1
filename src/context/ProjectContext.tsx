@@ -21,7 +21,9 @@ import {
   TaxInvoice,
   RFQDocument,
   PendingSyncItem,
-  OfflineSyncActionType
+  OfflineSyncActionType,
+  TaxSection,
+  ManpowerSection
 } from '../types';
 import { 
   INITIAL_PROJECTS, 
@@ -146,6 +148,8 @@ interface ProjectContextType {
   activeProjectId: string;
   activeProject: Project | undefined;
   activeTab: ActiveTab;
+  taxSection: TaxSection;
+  manpowerSection: ManpowerSection;
   language: Language;
   searchQuery: string;
   phaseFilter: string;
@@ -155,6 +159,8 @@ interface ProjectContextType {
   // Setters
   setActiveProjectId: (id: string) => void;
   setActiveTab: (tab: ActiveTab) => void;
+  setTaxSection: (section: TaxSection) => void;
+  setManpowerSection: (section: ManpowerSection) => void;
   setLanguage: (lang: Language) => void;
   setSearchQuery: (query: string) => void;
   setPhaseFilter: (phase: string) => void;
@@ -327,6 +333,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
   const [activeProjectId, setActiveProjectId] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [taxSection, setTaxSection] = useState<TaxSection>('invoices');
+  const [manpowerSection, setManpowerSection] = useState<ManpowerSection>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [phaseFilter, setPhaseFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -1362,6 +1370,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         activeProjectId,
         activeProject,
         activeTab,
+        taxSection,
+        manpowerSection,
         language,
         searchQuery,
         phaseFilter,
@@ -1369,6 +1379,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         statusFilter,
         setActiveProjectId,
         setActiveTab,
+        setTaxSection,
+        setManpowerSection,
         setLanguage,
         setSearchQuery,
         setPhaseFilter,

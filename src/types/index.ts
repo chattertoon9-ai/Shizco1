@@ -272,6 +272,12 @@ export type ActiveTab =
   | 'users'
   | 'github_guide';
 
+/** Which inner section of the Tax view is open (Invoices / RFQs / Tax calculator). */
+export type TaxSection = 'invoices' | 'rfqs' | 'calculator';
+
+/** Which inner section of the Manpower view is open (All / Attendance / Salary). */
+export type ManpowerSection = 'all' | 'attendance' | 'salary';
+
 export type Language = 'en' | 'ur';
 
 export type UserRole = 'admin' | 'user';
