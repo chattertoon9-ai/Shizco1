@@ -181,7 +181,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const [fileInputRef, setFileInputRef] = useState<HTMLInputElement | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const [mobileOpenGroup, setMobileOpenGroup] = useState<string | null>(null);
   const t = translations[language];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,7 +211,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     if (manpowerSectionValue) setManpowerSection(manpowerSectionValue);
     setActiveTab(tab);
     setOpenGroup(null);
-    setMobileOpenGroup(null);
   };
 
   const isItemActive = (item: GroupSubItem) => {
@@ -496,78 +494,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Mobile group strip — 7 groups, dropdown opens below */}
-          <div className="flex lg:hidden overflow-x-auto gap-2 py-2 border-t border-slate-200 text-xs text-slate-600 no-scrollbar">
-            {visibleGroups.map((group) => {
-              const isActive = group.matchTabs.includes(activeTab);
-              const GroupIcon = group.icon;
-              const isMobileOpen = mobileOpenGroup === group.key;
-              return (
-                <button
-                  key={group.key}
-                  onClick={() => {
-                    if (group.items) {
-                      setMobileOpenGroup(isMobileOpen ? null : group.key);
-                    } else {
-                      navigate(group.defaultTab, group.defaultTaxSection, group.defaultManpowerSection);
-                    }
-                  }}
-                  className={`flex items-center gap-1 whitespace-nowrap py-1.5 px-2.5 rounded-lg font-medium cursor-pointer border shrink-0 ${
-                    isActive
-                      ? 'text-white bg-blue-600 border-blue-600 font-bold'
-                      : isMobileOpen
-                        ? 'text-slate-900 bg-slate-200 border-slate-300'
-                        : 'bg-slate-100 border-slate-200 hover:text-slate-900'
-                  }`}
-                >
-                  <GroupIcon className="w-3.5 h-3.5" />
-                  <span>{language === 'ur' ? group.labelUr : group.labelEn}</span>
-                  {group.items && (
-                    <ChevronDown className={`w-3 h-3 transition-transform ${isMobileOpen ? 'rotate-180' : ''}`} />
-                  )}
-                </button>
-              );
-            })}
-            {currentUser && (
-              <button
-                onClick={logout}
-                className="flex items-center gap-1 whitespace-nowrap py-1.5 px-2.5 rounded-lg font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer shrink-0"
-                title={t.logout}
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>{t.logout}</span>
-              </button>
-            )}
-          </div>
-
-          {/* Mobile group dropdown panel */}
-          {mobileOpenGroup && (() => {
-            const group = visibleGroups.find(g => g.key === mobileOpenGroup);
-            if (!group || !group.items) return null;
-            return (
-              <div className="lg:hidden border-t border-slate-200 py-2 animate-fadeIn">
-                <div className="grid grid-cols-1 gap-1">
-                  {group.items.map(item => {
-                    const active = isItemActive(item);
-                    return (
-                      <button
-                        key={`${item.id}-${item.labelEn}`}
-                        onClick={() => navigate(item.id, item.taxSection, item.manpowerSection)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm transition cursor-pointer ${
-                          active
-                            ? 'bg-blue-50 text-blue-700 font-semibold'
-                            : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <item.icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
-                        <span>{language === 'ur' ? item.labelUr : item.labelEn}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
         </div>
       </header>
 
