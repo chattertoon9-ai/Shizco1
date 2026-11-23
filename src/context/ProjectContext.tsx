@@ -68,12 +68,12 @@ export const DEFAULT_USER_PERMISSIONS: UserPermissions = {
 export const INITIAL_USERS: AuthUser[] = [
   {
     id: 'user-admin',
-    name: 'Engr. Tariq Mehmood',
-    nameUrdu: 'انجینئر طارق محمود',
-    email: 'admin@alasad.com',
-    password: 'Asad@123',
+    name: 'Al Asad Constructors',
+    nameUrdu: 'الاسد کنسٹرکٹرز',
+    email: 'info@alasadconstructors.com',
+    password: 'Asad@3456',
     role: 'admin',
-    designation: 'Project Director & Chief Engineer',
+    designation: 'Owner',
     avatarColor: 'bg-gradient-to-tr from-blue-700 to-indigo-600',
     assignedProjectId: 'all',
     permissions: DEFAULT_ADMIN_PERMISSIONS,
@@ -309,7 +309,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [language, setLanguage] = useState<Language>(cached?.language || 'en');
   
   // Sub-users list created and managed by Admin
-  const [users, setUsers] = useState<AuthUser[]>(cached?.users || INITIAL_USERS);
+  // Owner login migration: browsers that visited before still hold the old
+  // seeded admin user in cache — force it to the company Owner login.
+  const migrateOwnerUser = (list: AuthUser[]): AuthUser[] =>
+    list.map(u =>
+      u.id === 'user-admin'
+        ? { ...u, name: 'Al Asad Constructors', nameUrdu: 'الاسد کنسٹرکٹرز', email: 'info@alasadconstructors.com', password: 'Asad@3456', designation: 'Owner' }
+        : u
+    );
+  const [users, setUsers] = useState<AuthUser[]>(migrateOwnerUser(cached?.users || INITIAL_USERS));
   
   // Dedicated Login Page Gate: Starts as null so every visitor lands directly on the Login Page!
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
@@ -741,11 +749,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
     }
 
-    // Check password if set (allow flexible demo passwords: 'admin' or 'admin123' for admin, 'user' or 'user123' for user)
+    // Check password if set (strict: only the stored password works)
     if (matched.password && password) {
-      const isMatch = matched.password === password || 
-                     (matched.role === 'admin' && (password === 'admin' || password === 'admin123')) ||
-                     (matched.role === 'user' && (password === 'user' || password === 'user123'));
+      const isMatch = matched.password === password;
       if (!isMatch) {
         return { 
           success: false, 

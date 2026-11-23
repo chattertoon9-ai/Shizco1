@@ -168,9 +168,8 @@ export const TaxComplianceView: React.FC = () => {
               : 'Tax Compliance, FBR & SRB calculation ledgers, and RFQ procurement are restricted to Administrator accounts.'}
           </p>
           <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-400 text-left space-y-1">
-            <div className="font-semibold text-slate-300">Quick Switch to Admin Demo:</div>
-            <div className="font-mono text-emerald-400">Email: admin@alasad.com</div>
-            <div className="font-mono text-emerald-400">Password: admin</div>
+            <div className="font-semibold text-slate-300">Owner Login:</div>
+            <div className="font-mono text-emerald-400">Email: info@alasadconstructors.com</div>
           </div>
           <button
             onClick={() => setIsLoginModalOpen(true)}
