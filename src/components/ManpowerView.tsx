@@ -789,7 +789,7 @@ export const ManpowerView: React.FC = () => {
       {/* ADD LABOR / WORKER PROFILE MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-          <div className="bg-slate-900 border border-blue-800/40 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-100 my-8">
+          <div className="bg-slate-900 border border-blue-800/40 rounded-2xl w-full max-w-xl shadow-2xl p-5 text-slate-100 my-8">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <HardHat className="w-5 h-5 text-blue-400" />
@@ -1115,7 +1115,7 @@ export const ManpowerView: React.FC = () => {
       {/* OFFICIAL WAGE & SALARY SLIP MODAL (A4 PRINT READY) */}
       {activeSlip && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
-          <div className="bg-slate-900 border border-emerald-600/40 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-100 my-8 printable-a4-document a4-print-document print:w-full print:max-w-none print:min-w-full print:p-0 print:m-0 print:rounded-none print:shadow-none print:border-none print:bg-white print:text-slate-900">
+          <div className="bg-slate-900 border border-emerald-600/40 rounded-2xl w-full max-w-[210mm] shadow-2xl p-6 text-slate-100 my-8 printable-a4-document a4-print-document print:w-full print:max-w-none print:min-w-full print:p-0 print:m-0 print:rounded-none print:shadow-none print:border-none print:bg-white print:text-slate-900">
             {/* Slip Header */}
             <div className="border-b-2 border-slate-800 print:border-slate-300 pb-4">
               <div className="flex items-start justify-between">

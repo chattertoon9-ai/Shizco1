@@ -38,7 +38,7 @@
    ========================================================================= */
 @page {
   size: A4 portrait;
-  margin: 8mm 10mm;
+  margin: 12mm;
 }
 
 @media print {
@@ -99,8 +99,8 @@
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    page-break-after: avoid;
-    page-break-inside: avoid;
+    page-break-after: auto;
+    page-break-inside: auto; /* long docs flow over pages; .print-avoid-break keeps signature/totals blocks whole */
     box-sizing: border-box !important;
   }
 
@@ -128,5 +128,13 @@
   .print-avoid-break {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* Material QR delivery tag: prints at tag size, centred on the A4 page */
+  .qr-print-tag {
+    width: 100mm !important;
+    max-width: 100mm !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }

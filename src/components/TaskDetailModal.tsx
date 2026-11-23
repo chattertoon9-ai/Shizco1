@@ -88,7 +88,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto my-8">
+      <div className="relative w-full max-w-xl bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl p-5 space-y-6 max-h-[90vh] overflow-y-auto my-8">
         
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-neutral-800 pb-4">

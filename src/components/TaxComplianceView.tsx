@@ -155,7 +155,7 @@ export const TaxComplianceView: React.FC = () => {
   if (!isAdmin) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4 animate-fadeIn">
-        <div className="max-w-md w-full bg-slate-900 border border-red-900/40 rounded-2xl p-6 text-center shadow-2xl space-y-4">
+        <div className="max-w-sm w-full bg-slate-900 border border-red-900/40 rounded-2xl p-6 text-center shadow-2xl space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-red-950/60 border border-red-800/60 flex items-center justify-center mx-auto text-rose-400 shadow-inner">
             <ShieldAlert className="w-8 h-8" />
           </div>
@@ -1186,7 +1186,7 @@ export const TaxComplianceView: React.FC = () => {
       {/* MODAL 1: GENERATE NEW TAX INVOICE */}
       {isNewInvoiceOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-          <div className="bg-slate-900 border border-blue-800/50 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-100 my-8">
+          <div className="bg-slate-900 border border-blue-800/50 rounded-2xl w-full max-w-xl shadow-2xl p-5 text-slate-100 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-blue-400" />
@@ -1456,7 +1456,7 @@ export const TaxComplianceView: React.FC = () => {
       {/* MODAL 2: PRINT / PREVIEW OFFICIAL TAX INVOICE */}
       {selectedInvoiceForPrint && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
-          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full max-w-3xl shadow-2xl p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
+          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full max-w-[210mm] shadow-2xl p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
             {/* Top Bar with Print & Close */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
@@ -1597,7 +1597,7 @@ export const TaxComplianceView: React.FC = () => {
       {/* MODAL: PRINT / PREVIEW OFFICIAL RFQ TENDER (A4) */}
       {selectedRFQForPrint && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
-          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full max-w-3xl shadow-2xl p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
+          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full max-w-[210mm] shadow-2xl p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
             {/* Top Bar with Print & Close */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
@@ -1748,7 +1748,7 @@ export const TaxComplianceView: React.FC = () => {
       {/* MODAL 3: ISSUE NEW RFQ */}
       {isNewRFQOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-          <div className="bg-slate-900 border border-emerald-800/50 rounded-2xl w-full max-w-xl shadow-2xl p-6 text-slate-100 my-8">
+          <div className="bg-slate-900 border border-emerald-800/50 rounded-2xl w-full max-w-lg shadow-2xl p-5 text-slate-100 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5 text-emerald-400" />
@@ -1873,7 +1873,7 @@ export const TaxComplianceView: React.FC = () => {
       {/* MODAL 4: SUBMIT QUOTATION TO RFQ */}
       {isAddQuoteModalOpen && selectedRFQForQuotes && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-slate-900 border border-blue-800/50 rounded-2xl w-full max-w-md shadow-2xl p-6 text-slate-100">
+          <div className="bg-slate-900 border border-blue-800/50 rounded-2xl w-full max-w-sm shadow-2xl p-5 text-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white">
                 Record Vendor Bid: {selectedRFQForQuotes.rfqNumber}

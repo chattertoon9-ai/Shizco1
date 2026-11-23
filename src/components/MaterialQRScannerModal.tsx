@@ -407,9 +407,9 @@ export const MaterialQRScannerModal: React.FC<MaterialQRScannerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-blue-900/60 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-xl bg-slate-900 border border-blue-900/60 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] print:bg-transparent print:shadow-none print:border-none print:max-w-none">
         {/* Modal Top Bar */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80 print:hidden">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500/20 to-blue-600/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 shadow-md">
               <QrCode className="w-5 h-5 text-amber-400" />
@@ -443,7 +443,7 @@ export const MaterialQRScannerModal: React.FC<MaterialQRScannerModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1 p-2 bg-slate-950/60 border-b border-slate-800/80 text-xs overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 p-2 bg-slate-950/60 border-b border-slate-800/80 text-xs overflow-x-auto no-scrollbar print:hidden">
           <button
             onClick={() => {
               setScannedData(null);
@@ -885,7 +885,7 @@ export const MaterialQRScannerModal: React.FC<MaterialQRScannerModalProps> = ({
           ) : (
             /* TAB 4: PRINT / VIEW MATERIAL QR LABEL */
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs print:hidden">
                 <span className="text-slate-400 font-semibold">
                   {language === 'ur' ? 'لیبل کے لیے میٹریل منتخب کریں:' : 'Select Material for QR Delivery Tag:'}
                 </span>
@@ -904,7 +904,7 @@ export const MaterialQRScannerModal: React.FC<MaterialQRScannerModalProps> = ({
 
               {/* Printable Tag Card */}
               {labelQrDataUrl && (
-                <div className="p-6 bg-white text-slate-950 rounded-2xl border-2 border-slate-300 shadow-xl max-w-sm mx-auto space-y-4 font-sans text-center print:border-none print:shadow-none">
+                <div className="p-6 bg-white text-slate-950 rounded-2xl border-2 border-slate-300 shadow-xl max-w-sm mx-auto space-y-4 font-sans text-center print:border-none print:shadow-none qr-print-tag">
                   {/* Tag Brand Header */}
                   <div className="border-b-2 border-slate-900 pb-2 flex items-center justify-between text-left">
                     <div className="flex items-center gap-2">
@@ -961,7 +961,7 @@ export const MaterialQRScannerModal: React.FC<MaterialQRScannerModalProps> = ({
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-center gap-3 pt-2">
+              <div className="flex items-center justify-center gap-3 pt-2 print:hidden">
                 <button
                   type="button"
                   onClick={() => window.print()}

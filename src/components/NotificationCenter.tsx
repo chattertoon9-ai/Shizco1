@@ -98,7 +98,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
-        className="w-full max-w-md h-full bg-[#070b14] border-l border-blue-900/40 shadow-2xl flex flex-col text-slate-100 overflow-hidden"
+        className="w-full max-w-sm h-full bg-[#070b14] border-l border-blue-900/40 shadow-2xl flex flex-col text-slate-100 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Header */}

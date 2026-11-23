@@ -252,8 +252,8 @@ export const GeminiSiteAssistant: React.FC<GeminiSiteAssistantProps> = ({
       <div 
         className={`bg-slate-950 border border-blue-600/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ${
           isExpanded 
-            ? 'w-full h-[95vh] max-w-6xl' 
-            : 'w-full h-[88vh] max-w-4xl'
+            ? 'w-full h-[95vh] max-w-5xl' 
+            : 'w-full h-[88vh] max-w-3xl'
         }`}
       >
         {/* Top Header - Al Asad Royal Blue & Emerald Branding */}
