@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { translations } from '../utils/translations';
 import { UserRole, AuthUser } from '../types';
+import { ForgotPasswordPanel, AccountRequestPanel } from './AuthSupportForms';
 import { 
   X, 
   ShieldCheck, 
@@ -43,6 +44,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Login-screen support flows (same as the landing page): 'forgot' records
+  // a password-reset request for the Owner; 'request' records a new-account
+  // request. Nothing is sent automatically — static app, no email server.
+  const [supportView, setSupportView] = useState<'login' | 'forgot' | 'request'>('login');
+
+  // Always reopen on the sign-in tabs, never stuck on a support panel.
+  useEffect(() => {
+    if (isOpen) setSupportView('login');
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -116,6 +126,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
+        {supportView === 'forgot' ? (
+          <div className="p-6">
+            <ForgotPasswordPanel variant="dark" onBack={() => setSupportView('login')} />
+          </div>
+        ) : supportView === 'request' ? (
+          <div className="p-6">
+            <AccountRequestPanel variant="dark" onBack={() => setSupportView('login')} />
+          </div>
+        ) : (
+          <>
         {/* Tab switch */}
         <div className="flex border-b border-slate-800 bg-slate-950/60 p-1 text-xs">
           <button
@@ -316,9 +336,30 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 <span>{language === 'ur' ? 'سائن ان کریں' : 'Sign In'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+
+              {/* Forgot password / request a new account — recorded for the
+                  Owner in User Management; nothing is sent automatically. */}
+              <div className="flex items-center justify-between pt-1 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setSupportView('forgot')}
+                  className="font-semibold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+                >
+                  {language === 'ur' ? 'پاس ورڈ بھول گئے؟' : 'Forgot password?'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSupportView('request')}
+                  className="font-semibold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                >
+                  {language === 'ur' ? 'نئے اکاؤنٹ کی درخواست' : 'Request a new account'}
+                </button>
+              </div>
             </form>
           )}
         </div>
+          </>
+        )}
 
         {/* Footer info */}
         <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/80 text-[11px] text-slate-500 flex items-center justify-between">

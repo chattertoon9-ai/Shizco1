@@ -311,6 +311,42 @@ export interface AuthUser {
   createdAt: string;
 }
 
+/**
+ * Forgot-password flow (no backend, no email server): a user asks for a
+ * reset from the login screen; the request is saved here (inside the
+ * namespaced storage payload, so real and demo requests never mix) and the
+ * Owner sees it in User Management, where Edit on the user sets a new
+ * password. The user is also offered a prefilled "Email the Owner" mailto.
+ */
+export interface PasswordResetRequest {
+  id: string;
+  email: string;
+  userName?: string;
+  createdAt: string; // ISO date
+  status: 'pending' | 'done';
+}
+
+/** Status of a client request for a new account. */
+export type AccountRequestStatus = 'pending' | 'approved' | 'rejected';
+
+/**
+ * Client request for a new account, submitted from the login screen. The
+ * Owner approves (creates the user with a password the Owner sets) or
+ * rejects it from User Management. Stored in the namespaced payload, so
+ * demo requests stay in the demo namespace.
+ */
+export interface AccountRequest {
+  id: string;
+  fullName: string;
+  email: string;
+  company: string;
+  phone?: string;
+  requestedRole: UserRole;
+  message?: string;
+  createdAt: string; // ISO date
+  status: AccountRequestStatus;
+}
+
 export type NotificationType = 'deadline' | 'snag' | 'system' | 'safety';
 export type NotificationSeverity = 'info' | 'warning' | 'urgent';
 

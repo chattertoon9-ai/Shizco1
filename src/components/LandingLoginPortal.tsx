@@ -12,6 +12,7 @@ import {
   Bell,
   Play,
 } from 'lucide-react';
+import { ForgotPasswordPanel, AccountRequestPanel } from './AuthSupportForms';
 import commercialSiteImg from '../assets/images/construction_commercial_site_1793460327058.jpg';
 
 interface LandingLoginPortalProps {
@@ -27,6 +28,10 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // Login-screen support flows: 'forgot' records a password-reset request
+  // for the Owner (no email is sent automatically — static app, no server);
+  // 'request' records a new-account request for the Owner to approve.
+  const [supportView, setSupportView] = useState<'login' | 'forgot' | 'request'>('login');
 
   // Safe ?email= prefill (e.g. the Alasad site's Admin Portal link): it only
   // fills the email field. It NEVER signs anyone in — the password must
@@ -219,6 +224,12 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
                 </p>
               </div>
 
+              {supportView === 'forgot' ? (
+                <ForgotPasswordPanel variant="light" onBack={() => setSupportView('login')} />
+              ) : supportView === 'request' ? (
+                <AccountRequestPanel variant="light" onBack={() => setSupportView('login')} />
+              ) : (
+                <>
               {/* Error Message */}
               {errorMessage && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
@@ -270,12 +281,13 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
                     </button>
                   </div>
                   <div className="flex justify-end mt-2">
-                    <a
-                      href="mailto:info@alasadconstructors.com?subject=Password%20reset%20%E2%80%94%20Shizco1%20portal"
-                      className="text-sm font-semibold text-blue-700 hover:text-blue-800 hover:underline"
+                    <button
+                      type="button"
+                      onClick={() => setSupportView('forgot')}
+                      className="text-sm font-semibold text-blue-700 hover:text-blue-800 hover:underline cursor-pointer"
                     >
                       {language === 'ur' ? 'پاس ورڈ بھول گئے؟' : 'Forgot password?'}
-                    </a>
+                    </button>
                   </div>
                 </div>
 
@@ -344,13 +356,16 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
               {/* Need an account */}
               <div className="mt-5 text-center text-sm text-slate-600">
                 {language === 'ur' ? 'اکاؤنٹ چاہیے؟ ' : 'Need an account? '}
-                <a
-                  href="mailto:info@alasadconstructors.com"
-                  className="font-semibold text-blue-700 hover:text-blue-800 hover:underline"
+                <button
+                  type="button"
+                  onClick={() => setSupportView('request')}
+                  className="font-semibold text-blue-700 hover:text-blue-800 hover:underline cursor-pointer"
                 >
-                  {language === 'ur' ? 'دفتر سے رابطہ کریں' : 'Contact the office'}
-                </a>
+                  {language === 'ur' ? 'نئے اکاؤنٹ کی درخواست بھیجیں' : 'Request a new account'}
+                </button>
               </div>
+                </>
+              )}
 
               {/* Copyright */}
               <div className="mt-5 pt-4 border-t border-slate-200 text-xs text-slate-500 text-center">

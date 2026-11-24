@@ -40,7 +40,12 @@ export const UserManagementView: React.FC = () => {
     language,
     isAdmin,
     isDemoMode,
-    hasPermission 
+    hasPermission,
+    passwordResetRequests,
+    accountRequests,
+    resolvePasswordResetRequest,
+    approveAccountRequest,
+    rejectAccountRequest
   } = useProject();
 
   const t = translations[language];
@@ -53,6 +58,38 @@ export const UserManagementView: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  // Approve-request panel state: the Owner types the new account's password
+  // before confirming. In demo mode the panel never opens — the guard shows
+  // the friendly demo notice instead.
+  const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null);
+  const [approvePassword, setApprovePassword] = useState('');
+
+  const pendingResetRequests = passwordResetRequests.filter(r => r.status === 'pending');
+  const doneResetRequests = passwordResetRequests.filter(r => r.status === 'done');
+  const pendingAccountRequests = accountRequests.filter(r => r.status === 'pending');
+  const handledAccountRequests = accountRequests.filter(r => r.status !== 'pending');
+
+  const handleApproveClick = (requestId: string) => {
+    if (isDemoMode) {
+      // Demo hard block: user creation is not allowed in demo — the guard
+      // shows the friendly notice and nothing is created or approved.
+      approveAccountRequest(requestId, '');
+      return;
+    }
+    setApprovingRequestId(requestId);
+    setApprovePassword(generateRandomPassword());
+  };
+
+  const handleConfirmApprove = (requestId: string) => {
+    const res = approveAccountRequest(requestId, approvePassword);
+    if (res.success) {
+      setApprovingRequestId(null);
+      setApprovePassword('');
+    } else if (res.message) {
+      alert(res.message);
+    }
+  };
 
   // Form State
   const [name, setName] = useState('');
@@ -353,7 +390,7 @@ export const UserManagementView: React.FC = () => {
         </div>
 
         {/* Quick KPI Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-800/80 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-5 border-t border-slate-800/80 text-xs">
           <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
             <span className="text-slate-400 block text-[11px]">{language === 'ur' ? 'کل یوزر اکاؤنٹس' : 'Total Accounts'}</span>
             <span className="text-lg font-bold text-white font-mono">{users.length}</span>
@@ -379,6 +416,172 @@ export const UserManagementView: React.FC = () => {
               {users.filter(u => u.role === 'user').length}
             </span>
           </div>
+
+          <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+            <span className="text-slate-400 block text-[11px]">{language === 'ur' ? 'پاس ورڈ ری سیٹ درخواستیں' : 'Password reset requests'}</span>
+            <span className="text-lg font-bold text-amber-400 font-mono">
+              {pendingResetRequests.length}
+            </span>
+          </div>
+
+          <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+            <span className="text-slate-400 block text-[11px]">{language === 'ur' ? 'نئے اکاؤنٹ کی درخواستیں' : 'New account requests'}</span>
+            <span className="text-lg font-bold text-emerald-400 font-mono">
+              {pendingAccountRequests.length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Requests — forgot-password + new-account, from the login screen.
+          In demo mode these are the DEMO namespace requests (view only);
+          Approve/Reject and "mark done" are blocked by the context guards
+          with the friendly demo notice. */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
+        <div>
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <Mail className="w-4 h-4 text-blue-400" />
+            {language === 'ur' ? 'درخواستیں — لاگ ان اسکرین سے' : 'Requests — from the login screen'}
+          </h2>
+          <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+            {language === 'ur'
+              ? 'یہ درخواستیں لاگ ان اسکرین سے آئی ہیں۔ پاس ورڈ ری سیٹ کے لیے متعلقہ یوزر کو Edit کر کے نیا پاس ورڈ مقرر کریں، پھر درخواست کو "Done" کریں۔ نئے اکاؤنٹ کے لیے Approve پر پاس ورڈ مقرر کریں یا Reject کر دیں۔'
+              : 'These requests came from the login screen. For a password reset, Edit that user to set a new password, then mark the request Done. For a new account, set a password on Approve, or Reject it.'}
+          </p>
+        </div>
+
+        {/* Password reset requests */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-amber-400" />
+            {language === 'ur' ? 'پاس ورڈ ری سیٹ کی درخواستیں' : 'Password reset requests'}
+            {doneResetRequests.length > 0 && (
+              <span className="text-[11px] font-normal text-slate-500">
+                ({doneResetRequests.length} {language === 'ur' ? 'مکمل' : 'done'})
+              </span>
+            )}
+          </h3>
+          {pendingResetRequests.length === 0 ? (
+            <p className="text-xs text-slate-500 mt-2">
+              {language === 'ur' ? 'کوئی زیر التواء درخواست نہیں ہے۔' : 'No pending reset requests.'}
+            </p>
+          ) : (
+            <div className="mt-2 space-y-2">
+              {pendingResetRequests.map((req) => (
+                <div key={req.id} className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="min-w-0">
+                    <div className="font-bold text-white truncate">{req.userName || req.email}</div>
+                    <div className="font-mono text-slate-400 truncate mt-0.5">{req.email}</div>
+                    <div className="text-slate-500 mt-0.5">{language === 'ur' ? 'درخواست: ' : 'Requested: '}{req.createdAt}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => resolvePasswordResetRequest(req.id)}
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    {language === 'ur' ? 'Done کریں (نیا پاس ورڈ لگا دیا)' : 'Mark done (new password set)'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* New account requests */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-emerald-400" />
+            {language === 'ur' ? 'نئے اکاؤنٹ کی درخواستیں' : 'New account requests'}
+            {handledAccountRequests.length > 0 && (
+              <span className="text-[11px] font-normal text-slate-500">
+                ({handledAccountRequests.length} {language === 'ur' ? 'نمٹا دی گئیں' : 'handled'})
+              </span>
+            )}
+          </h3>
+          {pendingAccountRequests.length === 0 ? (
+            <p className="text-xs text-slate-500 mt-2">
+              {language === 'ur' ? 'کوئی زیر التواء درخواست نہیں ہے۔' : 'No pending account requests.'}
+            </p>
+          ) : (
+            <div className="mt-2 space-y-3">
+              {pendingAccountRequests.map((req) => (
+                <div key={req.id} className="p-3.5 bg-slate-950/70 border border-slate-800 rounded-xl text-xs space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-bold text-white text-sm truncate">{req.fullName}</div>
+                      <div className="font-mono text-slate-400 truncate mt-0.5">{req.email}</div>
+                      <div className="text-slate-400 mt-1">
+                        {req.company}
+                        {req.phone ? ` · ${req.phone}` : ''}
+                        {` · ${req.requestedRole === 'admin' ? 'Administrator' : 'Site User'}`}
+                      </div>
+                      {req.message && (
+                        <div className="text-slate-500 mt-1 leading-relaxed">“{req.message}”</div>
+                      )}
+                      <div className="text-slate-500 mt-1">{language === 'ur' ? 'درخواست: ' : 'Requested: '}{req.createdAt}</div>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 text-[10px] font-mono font-bold rounded ${req.requestedRole === 'admin' ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}>
+                      {req.requestedRole.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {approvingRequestId === req.id ? (
+                    <div className="pt-2 border-t border-slate-800 space-y-2">
+                      <label className="block text-slate-400 font-semibold">
+                        {language === 'ur' ? 'نئے اکاؤنٹ کا پاس ورڈ مقرر کریں *' : 'Set a password for the new account *'}
+                      </label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={approvePassword}
+                          onChange={(e) => setApprovePassword(e.target.value)}
+                          className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmApprove(req.id)}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer transition-colors"
+                          >
+                            {language === 'ur' ? 'اکاؤنٹ بنائیں' : 'Create account'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setApprovingRequestId(null); setApprovePassword(''); }}
+                            className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer transition-colors"
+                          >
+                            {language === 'ur' ? 'منسوخ' : 'Cancel'}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        {language === 'ur'
+                          ? 'یہ پاس ورڈ درخواست گزار کو بتا دیں — وہ اسی ای میل اور پاس ورڈ سے سائن ان کرے گا۔'
+                          : 'Share this password with the requester — they will sign in with this email and password.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleApproveClick(req.id)}
+                        className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer transition-colors"
+                      >
+                        {language === 'ur' ? 'منظور کریں (Approve)' : 'Approve'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => rejectAccountRequest(req.id)}
+                        className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-300 hover:text-white font-bold cursor-pointer transition-colors"
+                      >
+                        {language === 'ur' ? 'مسترد کریں (Reject)' : 'Reject'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

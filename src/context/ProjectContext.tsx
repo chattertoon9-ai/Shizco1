@@ -23,7 +23,9 @@ import {
   PendingSyncItem,
   OfflineSyncActionType,
   TaxSection,
-  ManpowerSection
+  ManpowerSection,
+  PasswordResetRequest,
+  AccountRequest
 } from '../types';
 import { 
   INITIAL_PROJECTS, 
@@ -164,6 +166,11 @@ interface StorageState {
   language: Language;
   currentUser?: AuthUser | null;
   users?: AuthUser[];
+  // Forgot-password + new-account requests. They live inside this payload,
+  // so they are stored under the active namespace key (real or demo) and the
+  // two never mix — demo requests can never leak into the real list.
+  passwordResetRequests?: PasswordResetRequest[];
+  accountRequests?: AccountRequest[];
   readNotificationIds?: string[];
   dismissedNotificationIds?: string[];
   customNotifications?: NotificationItem[];
@@ -284,6 +291,16 @@ interface ProjectContextType {
   toggleUserStatus: (id: string) => void;
   hasPermission: (permission: keyof UserPermissions) => boolean;
 
+  // Forgot password + new-account requests (Owner handles them in User
+  // Management; there is no email server — the app only records requests).
+  passwordResetRequests: PasswordResetRequest[];
+  accountRequests: AccountRequest[];
+  requestPasswordReset: (email: string) => { success: boolean; message?: string };
+  resolvePasswordResetRequest: (id: string) => void;
+  submitAccountRequest: (data: Omit<AccountRequest, 'id' | 'createdAt' | 'status'>) => { success: boolean; message?: string };
+  approveAccountRequest: (id: string, password: string) => { success: boolean; message?: string };
+  rejectAccountRequest: (id: string) => void;
+
   // In-App Notification Center
   notifications: NotificationItem[];
   unreadNotificationsCount: number;
@@ -400,6 +417,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
   const [users, setUsers] = useState<AuthUser[]>(ensureDemoUser(migrateOwnerUser(cached?.users || INITIAL_USERS)));
+
+  // Forgot-password + new-account requests. Kept in state so they persist
+  // inside the namespaced payload (real vs demo storage never mixes).
+  const [passwordResetRequests, setPasswordResetRequests] = useState<PasswordResetRequest[]>(cached?.passwordResetRequests || []);
+  const [accountRequests, setAccountRequests] = useState<AccountRequest[]>(cached?.accountRequests || []);
   
   // Dedicated Login Page Gate: Starts as null so every visitor lands directly on the Login Page!
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
@@ -795,6 +817,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         language,
         currentUser: null, // Always null in persistent storage to ensure the Login Page is presented on fresh visits
         users,
+        passwordResetRequests,
+        accountRequests,
         readNotificationIds,
         dismissedNotificationIds,
         customNotifications
@@ -816,6 +840,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     language, 
     currentUser, 
     users, 
+    passwordResetRequests,
+    accountRequests,
     readNotificationIds, 
     dismissedNotificationIds, 
     customNotifications,
@@ -837,6 +863,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setRfqs(data?.rfqs || INITIAL_RFQS);
     setLanguage(data?.language || 'en');
     setUsers(ensureDemoUser(migrateOwnerUser(data?.users || INITIAL_USERS)));
+    setPasswordResetRequests(data?.passwordResetRequests || []);
+    setAccountRequests(data?.accountRequests || []);
     setReadNotificationIds(data?.readNotificationIds || []);
     setDismissedNotificationIds(data?.dismissedNotificationIds || []);
     setCustomNotifications(data?.customNotifications || []);
@@ -990,6 +1018,131 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return u;
     }));
+  };
+
+  // ---- Forgot password + new-account requests ----
+  // There is NO email server in this static app: nothing is sent
+  // automatically. A reset request is only RECORDED here (namespaced
+  // storage) so the Owner sees it in User Management and sets a new
+  // password with Edit on that user. The requester is also offered a
+  // prefilled "Email the Owner" mailto from the login screen.
+
+  const requestPasswordReset = (email: string): { success: boolean; message?: string } => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const matched = users.find(u => u.email.toLowerCase() === trimmedEmail);
+    if (!matched) {
+      return {
+        success: false,
+        message: language === 'ur'
+          ? 'یہ ای میل رجسٹرڈ نہیں ہے۔ برائے مہربانی دفتر سے رابطہ کریں۔'
+          : 'This email is not registered. Please contact the office.'
+      };
+    }
+    // One pending request per email — a repeat tap does not pile up rows.
+    const alreadyPending = passwordResetRequests.some(
+      r => r.status === 'pending' && r.email.toLowerCase() === trimmedEmail
+    );
+    if (alreadyPending) {
+      return {
+        success: true,
+        message: language === 'ur'
+          ? 'اس ای میل کے لیے درخواست پہلے سے موجود ہے — Owner جلد نیا پاس ورڈ مقرر کرے گا۔'
+          : 'A reset request for this email is already waiting — the Owner will set a new password soon.'
+      };
+    }
+    const req: PasswordResetRequest = {
+      id: `reset-${Date.now()}`,
+      email: matched.email,
+      userName: matched.name,
+      createdAt: new Date().toISOString().split('T')[0],
+      status: 'pending'
+    };
+    setPasswordResetRequests(prev => [req, ...prev]);
+    return { success: true };
+  };
+
+  // Owner marks a reset request done after setting the new password (Edit on
+  // the user in User Management). Blocked in demo mode like all user changes.
+  const resolvePasswordResetRequest = (id: string) => {
+    if (blockDemoUserMgmt()) return;
+    setPasswordResetRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'done' as const } : r));
+  };
+
+  // Client asks for a new account from the login screen. Works logged-out
+  // (landing page) and in demo mode — the request is saved into the active
+  // namespace, so demo requests stay in demo storage.
+  const submitAccountRequest = (data: Omit<AccountRequest, 'id' | 'createdAt' | 'status'>): { success: boolean; message?: string } => {
+    const trimmedEmail = data.email.trim().toLowerCase();
+    if (users.some(u => u.email.toLowerCase() === trimmedEmail)) {
+      return {
+        success: false,
+        message: language === 'ur'
+          ? 'اس ای میل کا اکاؤنٹ پہلے سے موجود ہے — سائن ان کریں یا پاس ورڈ بھول گئے ہوں تو Forgot password استعمال کریں۔'
+          : 'An account with this email already exists — please sign in, or use Forgot password.'
+      };
+    }
+    if (accountRequests.some(r => r.status === 'pending' && r.email.toLowerCase() === trimmedEmail)) {
+      return {
+        success: false,
+        message: language === 'ur'
+          ? 'اس ای میل کے لیے درخواست پہلے سے زیر التواء ہے — Owner جلد جواب دے گا۔'
+          : 'A request for this email is already pending — the Owner will respond soon.'
+      };
+    }
+    const req: AccountRequest = {
+      ...data,
+      email: trimmedEmail,
+      fullName: data.fullName.trim(),
+      company: data.company.trim(),
+      phone: data.phone?.trim() || undefined,
+      message: data.message?.trim() || undefined,
+      id: `accreq-${Date.now()}`,
+      createdAt: new Date().toISOString().split('T')[0],
+      status: 'pending'
+    };
+    setAccountRequests(prev => [req, ...prev]);
+    return { success: true };
+  };
+
+  // Owner approves a pending account request: creates the user with the
+  // requested role and the password the Owner types. HARD-BLOCKED in demo
+  // mode (user creation is a demo hard block) — the friendly demo notice
+  // fires and nothing is created or approved.
+  const approveAccountRequest = (id: string, password: string): { success: boolean; message?: string } => {
+    if (blockDemoUserMgmt()) {
+      return { success: false };
+    }
+    const req = accountRequests.find(r => r.id === id);
+    if (!req || req.status !== 'pending') {
+      return { success: false, message: language === 'ur' ? 'درخواست نہیں ملی۔' : 'Request not found.' };
+    }
+    if (!password.trim()) {
+      return { success: false, message: language === 'ur' ? 'برائے مہربانی پاس ورڈ درج کریں۔' : 'Please enter a password.' };
+    }
+    if (users.some(u => u.email.toLowerCase() === req.email.toLowerCase())) {
+      setAccountRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' as const } : r));
+      return { success: false, message: language === 'ur' ? 'اس ای میل کا اکاؤنٹ اب موجود ہے۔' : 'An account with this email already exists.' };
+    }
+    const isAdminRole = req.requestedRole === 'admin';
+    createUser({
+      name: req.fullName,
+      email: req.email,
+      password: password.trim(),
+      role: req.requestedRole,
+      designation: req.company ? `${req.company}` : (isAdminRole ? 'Project Director (Full Control)' : 'Site Operations Engineer'),
+      assignedProjectId: 'all',
+      permissions: isAdminRole ? DEFAULT_ADMIN_PERMISSIONS : DEFAULT_USER_PERMISSIONS,
+      isActive: true,
+      avatarColor: isAdminRole ? 'bg-gradient-to-tr from-blue-700 to-indigo-600' : 'bg-gradient-to-tr from-emerald-600 to-teal-500'
+    });
+    setAccountRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' as const } : r));
+    return { success: true };
+  };
+
+  // Owner rejects a pending account request. Blocked in demo mode as well.
+  const rejectAccountRequest = (id: string) => {
+    if (blockDemoUserMgmt()) return;
+    setAccountRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' as const } : r));
   };
 
   const activeProject = projects.find(p => p.id === activeProjectId);
@@ -1501,6 +1654,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTaxInvoices(INITIAL_TAX_INVOICES);
     setRfqs(INITIAL_RFQS);
     setUsers(INITIAL_USERS);
+    setPasswordResetRequests([]);
+    setAccountRequests([]);
     // In demo mode the reset must NOT switch the session to the admin account.
     if (!isDemoMode) setCurrentUser(INITIAL_USERS[0]);
     setReadNotificationIds([]);
@@ -1618,6 +1773,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteUser,
         toggleUserStatus,
         hasPermission,
+        passwordResetRequests,
+        accountRequests,
+        requestPasswordReset,
+        resolvePasswordResetRequest,
+        submitAccountRequest,
+        approveAccountRequest,
+        rejectAccountRequest,
         notifications,
         unreadNotificationsCount,
         isNotificationCenterOpen,
