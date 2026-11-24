@@ -42,21 +42,60 @@
 }
 
 @media print {
+  /* --- A4 ROOT RESET ---
+     ROOT CAUSE of the black print: the app shell is a dark full-viewport
+     page (body.min-h-screen + #root > div.min-h-screen.bg-[#070b14]).
+     In print those boxes stay 100vh tall with their dark background, so
+     Chrome paints a full black page-height block under the document and
+     spills ~one margin onto a 2nd page (worse on Letter, which is shorter
+     than A4). Neutralise the shell completely in print: white background
+     and no forced viewport height anywhere above the document. */
+  html,
+  body,
+  #root,
+  #root > div,
+  main {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
   /* Set document to pure white and black typography for crisp A4 output */
   html, body {
-    background: #ffffff !important;
     color: #0f172a !important;
     font-size: 10pt !important;
     line-height: 1.35 !important;
     width: 100% !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Automatically hide all non-printable navigation, buttons, and backgrounds */
+  /* Shell is flex on screen; in print it must be plain block flow so
+     nothing stretches to viewport height. */
+  #root > div {
+    display: block !important;
+  }
+  main {
+    display: block !important;
+    flex: none !important;
+    max-width: none !important;
+  }
+
+  /* No animations/transitions while printing: a frozen mid-fade modal
+     can offset the document. */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Hide all non-printable navigation, buttons, banners and backgrounds */
   header,
   nav,
   aside,
@@ -65,22 +104,29 @@
   .no-print,
   .print-hide,
   button,
-  [role="dialog"] > div:first-child:not(.printable-a4-document),
-  .fixed.bottom-6.right-6 {
+  .fixed.bottom-6.right-6,
+  .fixed.bottom-6.left-6 {
     display: none !important;
   }
 
-  /* Unhide printable modal container without dark overlay or backdrop blur */
+  /* Modal wrapper: plain static flow, fully transparent, no height */
   .fixed.inset-0 {
     position: static !important;
     display: block !important;
     background: transparent !important;
+    background-color: transparent !important;
     backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
+    max-width: none !important;
     height: auto !important;
+    min-height: 0 !important;
     overflow: visible !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
   /* A4 Document Container: 100% full printable area and clean formatting */
