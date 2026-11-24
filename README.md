@@ -42,3 +42,5 @@ npm run build
 2. In GitHub, go to **Settings** > **Pages**.
 3. Under **Build and deployment** > **Source**, choose **GitHub Actions**.
 4. The workflow in `.github/workflows/deploy.yml` will automatically build and publish your site at `https://<username>.github.io/<repo-name>/`.
+
+<!-- Trigger clean Pages deploy for demo email update -->
