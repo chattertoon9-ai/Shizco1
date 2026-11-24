@@ -53,6 +53,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     setActiveTab, 
     language, 
     isAdmin, 
+    isDemoMode,
     hasPermission, 
     deleteProject 
   } = useProject();
@@ -101,6 +102,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
   const handleDeleteProject = (id: string, name: string) => {
+    if (isDemoMode) {
+      alert(language === 'ur' ? 'ڈیمو میں پروجیکٹ حذف کرنا بند ہے — یہ صرف دیکھنے کے لیے ہے۔' : 'Deleting projects is not allowed in the demo — explore only.');
+      return;
+    }
     if (!isAdmin) {
       alert(language === 'ur' ? 'صرف ایڈمنسٹریٹر پروجیکٹ حذف کر سکتا ہے۔' : 'Only Administrator can delete projects.');
       return;

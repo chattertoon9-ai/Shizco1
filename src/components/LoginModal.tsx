@@ -62,14 +62,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleQuickSelectUser = (user: AuthUser) => {
+  // SECURITY: picking a profile only fills in its email and moves to the
+  // password form. Nobody signs in by tapping a card — the password must
+  // always be typed and verified. (The old one-tap login that signed in as
+  // any account, including Admin, with a single click is removed.)
+  const handleSelectUser = (user: AuthUser) => {
     setError(null);
-    const res = login(user.email, user.password);
-    if (res.success) {
-      onClose();
-    } else {
-      setError(res.message || 'Login error');
-    }
+    setEmail(user.email);
+    setPassword('');
+    setActiveTabLocal('custom');
   };
 
   // One-tap demo login — no password needed (sample data, separate namespace).
@@ -170,9 +171,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>
-                  {language === 'ur' 
-                    ? 'فوری سائن ان کے لیے کسی بھی اکاؤنٹ پر کلک کریں:' 
-                    : 'Click any configured profile to test their assigned rights:'}
+                  {language === 'ur'
+                    ? 'اکاؤنٹ منتخب کریں، پھر اس کا پاس ورڈ درج کریں:'
+                    : 'Select a profile, then enter its password:'}
                 </span>
                 <span className="font-mono text-emerald-400">
                   {users.length} {language === 'ur' ? 'اکاؤنٹس' : 'accounts'}
@@ -184,9 +185,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   const isCurrent = currentUser?.id === user.id;
 
                   return (
-                    <div 
+                    <div
                       key={user.id}
-                      onClick={() => handleQuickSelectUser(user)}
+                      onClick={() => handleSelectUser(user)}
                       className={`p-3.5 rounded-xl border transition-all cursor-pointer group flex items-start justify-between gap-3 ${
                         isCurrent
                           ? 'bg-blue-950/40 border-blue-500/80 ring-1 ring-blue-500/40'
@@ -217,8 +218,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
                           <div className="text-[10px] font-mono text-slate-500 mt-1 flex items-center gap-2">
                             <span>{user.email}</span>
-                            <span>·</span>
-                            <span className="text-slate-400">Pass: <strong className="text-blue-300">{user.password}</strong></span>
                           </div>
                         </div>
                       </div>

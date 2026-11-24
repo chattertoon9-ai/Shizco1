@@ -39,6 +39,7 @@ export const UserManagementView: React.FC = () => {
     projects, 
     language,
     isAdmin,
+    isDemoMode,
     hasPermission 
   } = useProject();
 
@@ -278,7 +279,10 @@ export const UserManagementView: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
-  if (!isAdmin) {
+  // The demo account may open and explore this screen (view only). Creating,
+  // editing, deleting or deactivating users stays blocked in demo mode and is
+  // refused with a friendly notice by the context guards.
+  if (!isAdmin && !isDemoMode) {
     return (
       <div className="py-16 text-center max-w-md mx-auto space-y-4 animate-fadeIn">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-xl shadow-rose-950/40">
@@ -298,6 +302,17 @@ export const UserManagementView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Demo notice — this screen opens in demo mode, but no user changes */}
+      {isDemoMode && (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs sm:text-sm flex items-center gap-2.5">
+          <ShieldCheck className="w-4 h-4 shrink-0" />
+          <span>
+            {language === 'ur'
+              ? 'ڈیمو موڈ — یہ اسکرین دیکھ سکتے ہیں، لیکن ڈیمو میں یوزر بنانا، تبدیل کرنا، حذف کرنا یا غیر فعال کرنا بند ہے۔'
+              : 'Demo mode — you can explore this screen, but creating, editing, deleting or deactivating users is not allowed in the demo.'}
+          </span>
+        </div>
+      )}
       {/* Header Banner */}
       <div className="bg-slate-900/90 border border-blue-900/40 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -312,8 +327,8 @@ export const UserManagementView: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                   {language === 'ur' ? 'یوزر و اختیارات کا انتظام (Admin Control)' : 'User Accounts & Access Rights'}
                 </h1>
-                <span className="px-2 py-0.5 text-xs font-bold font-mono tracking-wider bg-blue-600 text-white rounded">
-                  ADMIN ONLY
+                <span className={`px-2 py-0.5 text-xs font-bold font-mono tracking-wider text-white rounded ${isDemoMode ? 'bg-amber-500' : 'bg-blue-600'}`}>
+                  {isDemoMode ? 'DEMO — VIEW ONLY' : 'ADMIN ONLY'}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -325,6 +340,7 @@ export const UserManagementView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {!isDemoMode && (
             <button
               onClick={handleOpenCreateModal}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 cursor-pointer"
@@ -332,6 +348,7 @@ export const UserManagementView: React.FC = () => {
               <UserPlus className="w-4 h-4 stroke-[2.5]" />
               <span>{language === 'ur' ? '+ نیا سب یوزر بنائیں' : '+ Create Sub-User'}</span>
             </button>
+            )}
           </div>
         </div>
 
@@ -474,7 +491,10 @@ export const UserManagementView: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Password with View / Copy */}
+                  {/* Password with View / Copy — NEVER shown in demo mode:
+                      a demo visitor must not be able to reveal or copy any
+                      account's password (especially the Owner's). */}
+                  {!isDemoMode && (
                   <div className="flex items-center justify-between pt-1 border-t border-slate-800/50">
                     <span className="text-slate-500 flex items-center gap-1.5">
                       <Lock className="w-3.5 h-3.5 text-slate-400" />
@@ -502,6 +522,7 @@ export const UserManagementView: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                  )}
 
                   {/* Project Scope */}
                   <div className="flex items-center justify-between pt-1 border-t border-slate-800/50 text-[11px]">
@@ -565,7 +586,11 @@ export const UserManagementView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Card Footer Actions */}
+              {/* Card Footer Actions — hidden in demo mode: the edit modal
+                  pre-fills the account's password, so demo visitors must
+                  never be able to open it. Changes are blocked in demo
+                  anyway by the context guards. */}
+              {!isDemoMode && (
               <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
                 {/* Active / Inactive switch */}
                 <button
@@ -616,6 +641,7 @@ export const UserManagementView: React.FC = () => {
                   )}
                 </div>
               </div>
+              )}
             </div>
           );
         })}

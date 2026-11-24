@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import {
   Building2,
@@ -27,6 +27,18 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Safe ?email= prefill (e.g. the Alasad site's Admin Portal link): it only
+  // fills the email field. It NEVER signs anyone in — the password must
+  // always be typed and verified.
+  useEffect(() => {
+    try {
+      const prefill = new URLSearchParams(window.location.search).get('email');
+      if (prefill && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(prefill)) {
+        setEmail(prefill);
+      }
+    } catch (e) {}
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

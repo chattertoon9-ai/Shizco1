@@ -177,7 +177,8 @@ export const ModulesPortalView: React.FC = () => {
     logout,
     activeProjectId,
     setActiveProjectId,
-    isAdmin
+    isAdmin,
+    isDemoMode
   } = useProject();
 
   const goTo = (
@@ -190,7 +191,7 @@ export const ModulesPortalView: React.FC = () => {
     setActiveTab(tab);
   };
 
-  const visibleGroups = GROUPS.filter(group => !group.adminOnly || isAdmin);
+  const visibleGroups = GROUPS.filter(group => !group.adminOnly || isAdmin || isDemoMode);
 
   // Executive Summary — the same key numbers as the Executive Overview,
   // honouring the site filter above (all sites, or the one site selected).

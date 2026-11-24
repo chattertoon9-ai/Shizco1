@@ -583,6 +583,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const hasPermission = (permission: keyof UserPermissions): boolean => {
     if (!currentUser) return false;
     if (currentUser.role === 'admin') return true;
+    // Demo mode: every option is temporarily open so the demo can be fully
+    // explored — except the two hard blocks (user management and deleting
+    // projects), which stay closed and are refused with a friendly notice.
+    if (isDemoMode) {
+      if (permission === 'canManageUsers' || permission === 'canDeleteProjects') return false;
+      return true;
+    }
     return !!currentUser.permissions?.[permission];
   };
 
@@ -862,15 +869,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
     }
 
-    // Check password if set (strict: only the stored password works)
-    if (matched.password && password) {
-      const isMatch = matched.password === password;
-      if (!isMatch) {
-        return { 
-          success: false, 
-          message: language === 'ur' ? 'غلط پاس ورڈ۔ برائے مہربانی دوبارہ کوشش کریں۔' : 'Incorrect password. Please verify credentials.' 
-        };
-      }
+    // Password is ALWAYS required — an empty or missing password never signs
+    // anyone in. This closed a bypass where login(email) with no password
+    // succeeded. The only password-free entry is the "Try Demo" button, and
+    // it always supplies the demo password internally (loginAsDemo below).
+    if (!password || matched.password !== password) {
+      return {
+        success: false,
+        message: language === 'ur' ? 'غلط پاس ورڈ۔ برائے مہربانی دوبارہ کوشش کریں۔' : 'Incorrect password. Please verify credentials.'
+      };
     }
 
     // The demo account switches the whole app to the demo storage namespace;
@@ -1011,9 +1018,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteProject = (id: string) => {
     if (!hasPermission('canDeleteProjects') && !isAdmin) {
-      alert(language === 'ur' 
-        ? 'صرف مجاز ایڈمنسٹریٹر کو پروجیکٹ حذف کرنے کی اجازت ہے۔' 
-        : 'Permission Denied: Only users with project deletion rights can delete projects.');
+      alert(isDemoMode
+        ? (language === 'ur'
+          ? 'ڈیمو میں پروجیکٹ حذف کرنا بند ہے — یہ صرف دیکھنے کے لیے ہے۔'
+          : 'Deleting projects is not allowed in the demo — explore only.')
+        : (language === 'ur'
+          ? 'صرف مجاز ایڈمنسٹریٹر کو پروجیکٹ حذف کرنے کی اجازت ہے۔'
+          : 'Permission Denied: Only users with project deletion rights can delete projects.'));
       return;
     }
     setProjects(prev => prev.filter(p => p.id !== id));

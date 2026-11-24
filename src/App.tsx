@@ -192,7 +192,7 @@ const MainAppContent: React.FC = () => {
         )}
 
         {activeTab === 'users' && (
-          isAdmin ? <UserManagementView /> : <ModulesPortalView />
+          (isAdmin || isDemoMode) ? <UserManagementView /> : <ModulesPortalView />
         )}
 
         {activeTab === 'github_guide' && (

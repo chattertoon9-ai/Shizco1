@@ -50,6 +50,7 @@ export const TaxComplianceView: React.FC = () => {
     rfqs,
     language,
     isAdmin,
+    isDemoMode,
     activeProjectId,
     setActiveProjectId,
     setActiveTab,
@@ -151,8 +152,9 @@ export const TaxComplianceView: React.FC = () => {
   const [calcType, setCalcType] = useState<'mixed_turnkey' | 'pure_goods' | 'pure_services'>('mixed_turnkey');
   const [calcFilerStatus, setCalcFilerStatus] = useState<'filer' | 'non_filer'>('filer');
 
-  // ADMIN PERMISSION GUARD
-  if (!isAdmin) {
+  // ADMIN PERMISSION GUARD — the demo account may explore this screen too
+  // (demo storage only); every other non-admin still sees the wall.
+  if (!isAdmin && !isDemoMode) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4 animate-fadeIn">
         <div className="max-w-sm w-full bg-slate-900 border border-red-900/40 rounded-2xl p-6 text-center shadow-2xl space-y-4">
