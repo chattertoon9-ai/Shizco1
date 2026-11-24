@@ -162,7 +162,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                     {language === 'ur' ? 'ڈیمو آزمائیں — پاس ورڈ کی ضرورت نہیں' : 'Try Demo — no password needed'}
                   </div>
                   <div className="text-[11px] text-slate-400 mt-0.5">
-                    demo@alasadconstructors.com · Demo@1234 — {language === 'ur' ? 'صرف نمونہ ڈیٹا' : 'sample data only'}
+                    demo@shizcon.com · Demo@1234 — {language === 'ur' ? 'صرف نمونہ ڈیٹا' : 'sample data only'}
                   </div>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0" />

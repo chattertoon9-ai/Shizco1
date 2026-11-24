@@ -83,7 +83,7 @@ export const DEMO_PERMISSIONS: UserPermissions = {
 };
 
 export const DEMO_USER_ID = 'user-demo';
-export const DEMO_USER_EMAIL = 'demo@alasadconstructors.com';
+export const DEMO_USER_EMAIL = 'demo@shizcon.com';
 export const DEMO_USER_PASSWORD = 'Demo@1234';
 
 export const INITIAL_USERS: AuthUser[] = [
@@ -386,9 +386,18 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Browsers that cached the users list before the demo account existed would
   // otherwise never find it — always keep the demo account in the list.
   const ensureDemoUser = (list: AuthUser[]): AuthUser[] => {
-    if (list.some(u => u.id === DEMO_USER_ID)) return list;
     const demo = INITIAL_USERS.find(u => u.id === DEMO_USER_ID);
-    return demo ? [...list, demo] : list;
+    if (!demo) return list;
+    if (!list.some(u => u.id === DEMO_USER_ID || u.email === 'demo@alasadconstructors.com')) {
+      return [...list, demo];
+    }
+    // A cached demo account that still carries the old email gets updated
+    // in place — never a second demo user.
+    return list.map(u =>
+      (u.id === DEMO_USER_ID || u.email === 'demo@alasadconstructors.com')
+        ? { ...u, email: DEMO_USER_EMAIL }
+        : u
+    );
   };
   const [users, setUsers] = useState<AuthUser[]>(ensureDemoUser(migrateOwnerUser(cached?.users || INITIAL_USERS)));
   

@@ -321,7 +321,7 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
                 </button>
                 <p className="mt-2 text-center text-xs text-slate-500 leading-relaxed">
                   {language === 'ur' ? 'ڈیمو لاگ ان: ' : 'Demo login: '}
-                  <span className="font-mono font-semibold text-slate-700">demo@alasadconstructors.com</span>
+                  <span className="font-mono font-semibold text-slate-700">demo@shizcon.com</span>
                   {' · '}
                   <span className="font-mono font-semibold text-slate-700">Demo@1234</span>
                   <br />
