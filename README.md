@@ -44,3 +44,4 @@ npm run build
 4. The workflow in `.github/workflows/deploy.yml` will automatically build and publish your site at `https://<username>.github.io/<repo-name>/`.
 
 <!-- Trigger clean Pages deploy for demo email update -->
+<!-- Trigger clean Pages deploy for A4 print + Executive Summary update -->
