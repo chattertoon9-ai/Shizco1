@@ -16,7 +16,8 @@ import {
   Sparkles,
   Users,
   Eye,
-  EyeOff
+  EyeOff,
+  Play
 } from 'lucide-react';
 
 interface LoginModalProps {
@@ -68,6 +69,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       onClose();
     } else {
       setError(res.message || 'Login error');
+    }
+  };
+
+  // One-tap demo login — no password needed (sample data, separate namespace).
+  const handleTryDemo = () => {
+    setError(null);
+    const res = loginAsDemo();
+    if (res.success) {
+      onClose();
+    } else {
+      setError(res.message || 'Demo login failed.');
     }
   };
 
@@ -137,6 +149,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           {activeTab === 'profiles' ? (
             /* Accounts List (both Admin and all Sub-Users created by Admin) */
             <div className="space-y-3">
+              {/* One-tap demo login */}
+              <button
+                onClick={handleTryDemo}
+                className="w-full p-3.5 rounded-xl border border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20 transition-all cursor-pointer flex items-center gap-3 text-left"
+              >
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-md shrink-0">
+                  <Play className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-white">
+                    {language === 'ur' ? 'ڈیمو آزمائیں — پاس ورڈ کی ضرورت نہیں' : 'Try Demo — no password needed'}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    demo@alasadconstructors.com · Demo@1234 — {language === 'ur' ? 'صرف نمونہ ڈیٹا' : 'sample data only'}
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              </button>
+
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>
                   {language === 'ur' 

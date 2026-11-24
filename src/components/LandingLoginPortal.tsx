@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Wallet,
   Bell,
+  Play,
 } from 'lucide-react';
 import commercialSiteImg from '../assets/images/construction_commercial_site_1793460327058.jpg';
 
@@ -18,7 +19,7 @@ interface LandingLoginPortalProps {
 }
 
 export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginSuccess }) => {
-  const { login, language, setLanguage } = useProject();
+  const { login, loginAsDemo, language, setLanguage } = useProject();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +40,23 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
         if (onLoginSuccess) onLoginSuccess();
       } else {
         setErrorMessage(res.message || (language === 'ur' ? 'غلط ای میل یا پاس ورڈ ہے۔' : 'Invalid email or password.'));
+      }
+    }, 350);
+  };
+
+  // One-tap demo login — no password needed. Switches to the demo namespace
+  // (sample data, separate from the real company data).
+  const handleTryDemo = () => {
+    setErrorMessage('');
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const res = loginAsDemo();
+      setIsLoading(false);
+      if (res.success) {
+        if (onLoginSuccess) onLoginSuccess();
+      } else {
+        setErrorMessage(res.message || (language === 'ur' ? 'ڈیمو لاگ ان ناکام رہا۔' : 'Demo login failed.'));
       }
     }, 350);
   };
@@ -284,6 +302,32 @@ export const LandingLoginPortal: React.FC<LandingLoginPortalProps> = ({ onLoginS
                   )}
                 </button>
               </form>
+
+              {/* Try Demo — one tap, no password needed */}
+              <div className="mt-5">
+                <div className="flex items-center gap-3 text-xs text-slate-400">
+                  <span className="flex-1 h-px bg-slate-200" />
+                  <span>{language === 'ur' ? 'یا ڈیمو دیکھیں' : 'or explore the demo'}</span>
+                  <span className="flex-1 h-px bg-slate-200" />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTryDemo}
+                  disabled={isLoading}
+                  className="mt-3 w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm tracking-wide shadow-lg shadow-amber-500/25 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>{language === 'ur' ? 'ڈیمو آزمائیں — پاس ورڈ کی ضرورت نہیں' : 'Try Demo — no password needed'}</span>
+                </button>
+                <p className="mt-2 text-center text-xs text-slate-500 leading-relaxed">
+                  {language === 'ur' ? 'ڈیمو لاگ ان: ' : 'Demo login: '}
+                  <span className="font-mono font-semibold text-slate-700">demo@alasadconstructors.com</span>
+                  {' · '}
+                  <span className="font-mono font-semibold text-slate-700">Demo@1234</span>
+                  <br />
+                  {language === 'ur' ? 'صرف نمونہ ڈیٹا — اصل کمپنی کے ڈیٹا سے مکمل الگ' : 'Sample data only — completely separate from the real company data'}
+                </p>
+              </div>
 
               {/* Need an account */}
               <div className="mt-5 text-center text-sm text-slate-600">

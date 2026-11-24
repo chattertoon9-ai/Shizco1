@@ -65,6 +65,27 @@ export const DEFAULT_USER_PERMISSIONS: UserPermissions = {
   canManageTax: false,
 };
 
+// Demo account: the lowest possible rights — explore the dashboard, but no
+// admin/Owner rights, no User Management, no user create/delete, no budgets,
+// no accounts, no tax. Used for the public demo on the SHIZCON hub.
+export const DEMO_PERMISSIONS: UserPermissions = {
+  canCreateProjects: false,
+  canDeleteProjects: false,
+  canEditBudgets: false,
+  canManageTasks: true,
+  canAddDailyLogs: true,
+  canManageMaterials: true,
+  canResolveSnags: true,
+  canManageUsers: false,
+  canManageManpower: false,
+  canManageAccounts: false,
+  canManageTax: false,
+};
+
+export const DEMO_USER_ID = 'user-demo';
+export const DEMO_USER_EMAIL = 'demo@alasadconstructors.com';
+export const DEMO_USER_PASSWORD = 'Demo@1234';
+
 export const INITIAL_USERS: AuthUser[] = [
   {
     id: 'user-admin',
@@ -111,6 +132,20 @@ export const INITIAL_USERS: AuthUser[] = [
     },
     isActive: true,
     createdAt: '2025-02-01'
+  },
+  {
+    id: DEMO_USER_ID,
+    name: 'Demo User',
+    nameUrdu: 'ڈیمو صارف',
+    email: DEMO_USER_EMAIL,
+    password: DEMO_USER_PASSWORD,
+    role: 'user',
+    designation: 'Demo Account — Explore Only',
+    avatarColor: 'bg-gradient-to-tr from-sky-600 to-cyan-500',
+    assignedProjectId: 'all',
+    permissions: DEMO_PERMISSIONS,
+    isActive: true,
+    createdAt: '2026-11-24'
   }
 ];
 
@@ -226,6 +261,9 @@ interface ProjectContextType {
   exportDataJson: () => void;
   importDataJson: (jsonString: string) => boolean;
   resetToSampleData: () => void;
+  // Demo mode: separate storage namespace + demo-only reset
+  isDemoMode: boolean;
+  resetDemoData: () => void;
 
   // Auth & Sub-User Management (Admin rights creation)
   currentUser: AuthUser | null;
@@ -235,7 +273,7 @@ interface ProjectContextType {
   isLoginModalOpen: boolean;
   setIsLoginModalOpen: (open: boolean) => void;
   login: (email: string, password?: string, role?: UserRole) => { success: boolean; message?: string };
-  loginAsDemo: (role: UserRole) => void;
+  loginAsDemo: (role?: UserRole) => { success: boolean; message?: string };
   logout: () => void;
   isLogoutPageActive: boolean;
   setIsLogoutPageActive: (active: boolean) => void;
@@ -278,16 +316,44 @@ const LEGACY_STORAGE_KEY_V1 = 'alasad_construction_tracker_v1';
 const LEGACY_STORAGE_KEY_MEIMAR = 'meimar_construction_tracker_v1';
 const SYNC_QUEUE_KEY = 'alasad_offline_sync_queue_v1';
 const LAST_SYNC_KEY = 'alasad_last_sync_timestamp';
+const SESSION_KEY = 'alasad_session_user';
+
+// Demo namespace — completely separate from the real company storage.
+// When the demo account is logged in, ONLY these keys are read or written.
+const DEMO_STORAGE_KEY = 'alasad_demo_construction_tracker_v2';
+const DEMO_SYNC_QUEUE_KEY = 'alasad_demo_offline_sync_queue_v1';
+const DEMO_LAST_SYNC_KEY = 'alasad_demo_last_sync_timestamp';
+const DEMO_SESSION_KEY = 'alasad_demo_session_user';
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Read initial cache
-  const readCachedData = (): StorageState | null => {
+  // Demo mode is decided by which session key exists: a demo session means
+  // the whole provider runs on the demo storage namespace from the first read.
+  const readInitialDemoMode = (): boolean => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY) || 
-                  localStorage.getItem(LEGACY_STORAGE_KEY_V1) || 
-                  localStorage.getItem(LEGACY_STORAGE_KEY_MEIMAR);
+      return !!sessionStorage.getItem(DEMO_SESSION_KEY);
+    } catch (e) {
+      return false;
+    }
+  };
+  const initialDemoMode = readInitialDemoMode();
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(initialDemoMode);
+
+  // Active storage keys for this render — demo keys in demo mode, real keys otherwise.
+  const storageKey = isDemoMode ? DEMO_STORAGE_KEY : STORAGE_KEY;
+  const syncQueueKey = isDemoMode ? DEMO_SYNC_QUEUE_KEY : SYNC_QUEUE_KEY;
+  const lastSyncKey = isDemoMode ? DEMO_LAST_SYNC_KEY : LAST_SYNC_KEY;
+
+  // Read initial cache from the active namespace (legacy keys only for real data)
+  const readCachedData = (demo: boolean): StorageState | null => {
+    try {
+      const key = demo ? DEMO_STORAGE_KEY : STORAGE_KEY;
+      const raw = demo
+        ? localStorage.getItem(key)
+        : localStorage.getItem(key) ||
+          localStorage.getItem(LEGACY_STORAGE_KEY_V1) ||
+          localStorage.getItem(LEGACY_STORAGE_KEY_MEIMAR);
       if (raw) return JSON.parse(raw);
     } catch (e) {
       console.error('Failed reading from localStorage', e);
@@ -295,7 +361,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return null;
   };
 
-  const cached = readCachedData();
+  const cached = readCachedData(initialDemoMode);
 
   const [projects, setProjects] = useState<Project[]>(cached?.projects || INITIAL_PROJECTS);
   const [tasks, setTasks] = useState<ConstructionTask[]>(cached?.tasks || INITIAL_TASKS);
@@ -317,12 +383,22 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ? { ...u, name: 'Al Asad Constructors', nameUrdu: 'الاسد کنسٹرکٹرز', email: 'info@alasadconstructors.com', password: 'Asad@3456', designation: 'Owner' }
         : u
     );
-  const [users, setUsers] = useState<AuthUser[]>(migrateOwnerUser(cached?.users || INITIAL_USERS));
+  // Browsers that cached the users list before the demo account existed would
+  // otherwise never find it — always keep the demo account in the list.
+  const ensureDemoUser = (list: AuthUser[]): AuthUser[] => {
+    if (list.some(u => u.id === DEMO_USER_ID)) return list;
+    const demo = INITIAL_USERS.find(u => u.id === DEMO_USER_ID);
+    return demo ? [...list, demo] : list;
+  };
+  const [users, setUsers] = useState<AuthUser[]>(ensureDemoUser(migrateOwnerUser(cached?.users || INITIAL_USERS)));
   
   // Dedicated Login Page Gate: Starts as null so every visitor lands directly on the Login Page!
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
-      const sessionUser = sessionStorage.getItem('alasad_session_user');
+      // A demo session takes precedence — it also puts the provider in demo mode.
+      const demoSession = sessionStorage.getItem(DEMO_SESSION_KEY);
+      if (demoSession) return JSON.parse(demoSession);
+      const sessionUser = sessionStorage.getItem(SESSION_KEY);
       if (sessionUser) return JSON.parse(sessionUser);
     } catch (e) {}
     return null;
@@ -349,9 +425,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Offline Access & Cloud Sync Engine State
-  const readInitialQueue = (): PendingSyncItem[] => {
+  const readInitialQueue = (demo: boolean): PendingSyncItem[] => {
     try {
-      const raw = localStorage.getItem(SYNC_QUEUE_KEY);
+      const raw = localStorage.getItem(demo ? DEMO_SYNC_QUEUE_KEY : SYNC_QUEUE_KEY);
       if (raw) return JSON.parse(raw);
     } catch (e) {
       console.error('Failed reading offline sync queue', e);
@@ -365,11 +441,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSimulatedOffline, setIsSimulatedOffline] = useState<boolean>(false);
   const isOnline = isRawOnline && !isSimulatedOffline;
 
-  const [pendingSyncQueue, setPendingSyncQueue] = useState<PendingSyncItem[]>(readInitialQueue);
+  const [pendingSyncQueue, setPendingSyncQueue] = useState<PendingSyncItem[]>(() => readInitialQueue(initialDemoMode));
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(LAST_SYNC_KEY);
+      return localStorage.getItem(initialDemoMode ? DEMO_LAST_SYNC_KEY : LAST_SYNC_KEY);
     } catch (e) {
       return null;
     }
@@ -382,7 +458,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const persistQueue = (queue: PendingSyncItem[]) => {
     try {
-      localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+      localStorage.setItem(syncQueueKey, JSON.stringify(queue));
     } catch (e) {}
   };
 
@@ -448,7 +524,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
       setLastSyncTime(nowTime);
       try {
-        localStorage.setItem(LAST_SYNC_KEY, nowTime);
+        localStorage.setItem(lastSyncKey, nowTime);
       } catch (e) {}
 
       addCustomNotification({
@@ -707,7 +783,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         dismissedNotificationIds,
         customNotifications
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(storageKey, JSON.stringify(payload));
     } catch (e) {
       console.error('Failed saving state to localStorage', e);
     }
@@ -726,8 +802,36 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     users, 
     readNotificationIds, 
     dismissedNotificationIds, 
-    customNotifications
+    customNotifications,
+    isDemoMode
   ]);
+
+  // Load every data slice from one namespace (demo or real). A missing key
+  // seeds the built-in sample data, so the demo always looks full.
+  const loadNamespaceData = (demo: boolean) => {
+    const data = readCachedData(demo);
+    setProjects(data?.projects || INITIAL_PROJECTS);
+    setTasks(data?.tasks || INITIAL_TASKS);
+    setDailyLogs(data?.dailyLogs || INITIAL_DAILY_LOGS);
+    setMaterials(data?.materials || INITIAL_MATERIALS);
+    setSnags(data?.snags || INITIAL_SNAGS);
+    setLabor(data?.labor || INITIAL_LABOR);
+    setAccounts(data?.accounts || INITIAL_ACCOUNTS);
+    setTaxInvoices(data?.taxInvoices || INITIAL_TAX_INVOICES);
+    setRfqs(data?.rfqs || INITIAL_RFQS);
+    setLanguage(data?.language || 'en');
+    setUsers(ensureDemoUser(migrateOwnerUser(data?.users || INITIAL_USERS)));
+    setReadNotificationIds(data?.readNotificationIds || []);
+    setDismissedNotificationIds(data?.dismissedNotificationIds || []);
+    setCustomNotifications(data?.customNotifications || []);
+    setPendingSyncQueue(readInitialQueue(demo));
+    try {
+      setLastSyncTime(localStorage.getItem(demo ? DEMO_LAST_SYNC_KEY : LAST_SYNC_KEY));
+    } catch (e) {
+      setLastSyncTime(null);
+    }
+    setActiveProjectId('all');
+  };
 
   // Auth & Sub-User Management Implementation
   const login = (email: string, password?: string, _role?: UserRole): { success: boolean; message?: string } => {
@@ -760,10 +864,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
 
+    // The demo account switches the whole app to the demo storage namespace;
+    // every other account switches it back to the real company namespace.
+    const targetIsDemo = matched.id === DEMO_USER_ID;
+    setIsDemoMode(targetIsDemo);
+    loadNamespaceData(targetIsDemo);
     setCurrentUser(matched);
     setIsLogoutPageActive(false);
     try {
-      sessionStorage.setItem('alasad_session_user', JSON.stringify(matched));
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(DEMO_SESSION_KEY);
+      sessionStorage.setItem(targetIsDemo ? DEMO_SESSION_KEY : SESSION_KEY, JSON.stringify(matched));
     } catch (e) {}
 
     if (matched.assignedProjectId && matched.assignedProjectId !== 'all') {
@@ -773,18 +884,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return { success: true };
   };
 
-  const loginAsDemo = (role: UserRole) => {
-    const target = users.find(u => u.role === role) || users[0];
-    setCurrentUser(target);
-    setIsLogoutPageActive(false);
-    try {
-      sessionStorage.setItem('alasad_session_user', JSON.stringify(target));
-    } catch (e) {}
-
-    if (target.assignedProjectId && target.assignedProjectId !== 'all') {
-      setActiveProjectId(target.assignedProjectId);
-    }
-    setIsLoginModalOpen(false);
+  // One-tap demo login (used by the "Try Demo" button): same as typing the
+  // demo email + password — switches to the demo namespace.
+  const loginAsDemo = (_role?: UserRole) => {
+    return login(DEMO_USER_EMAIL, DEMO_USER_PASSWORD);
   };
 
   const logout = () => {
@@ -797,18 +900,35 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     setCurrentUser(null);
     try {
-      sessionStorage.removeItem('alasad_session_user');
-      const raw = localStorage.getItem(STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(DEMO_SESSION_KEY);
+      const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
         delete parsed.currentUser;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        localStorage.setItem(storageKey, JSON.stringify(parsed));
       }
     } catch (e) {}
+    // Leave demo mode and reload the real company data into memory, so the
+    // next login starts clean. Real storage keys were never touched in demo.
+    setIsDemoMode(false);
+    loadNamespaceData(false);
   };
 
   // Sub-User creation by Admin
+  // The demo account has no User Management rights at all — block any user
+  // change while in demo mode (the Users tab is admin-gated too, this is
+  // defence in depth so no code path can touch users from a demo session).
+  const blockDemoUserMgmt = (): boolean => {
+    if (!isDemoMode) return false;
+    alert(language === 'ur' ? 'ڈیمو موڈ میں یوزر مینجمنٹ بند ہے۔' : 'User management is disabled in Demo Mode.');
+    return true;
+  };
+
   const createUser = (userData: Omit<AuthUser, 'id' | 'createdAt'>): AuthUser => {
+    if (blockDemoUserMgmt()) {
+      return users.find(u => u.id === DEMO_USER_ID) || users[0];
+    }
     const newUser: AuthUser = {
       ...userData,
       id: `user-${Date.now()}`,
@@ -819,6 +939,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateUser = (id: string, updates: Partial<AuthUser>) => {
+    if (blockDemoUserMgmt()) return;
     setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
     if (currentUser?.id === id) {
       setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
@@ -826,8 +947,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteUser = (id: string) => {
+    if (blockDemoUserMgmt()) return;
     if (id === 'user-admin') {
       alert(language === 'ur' ? 'مین ایڈمن اکاؤنٹ حذف نہیں کیا جا سکتا۔' : 'The root Administrator account cannot be deleted.');
+      return;
+    }
+    if (id === DEMO_USER_ID) {
+      alert(language === 'ur' ? 'ڈیمو اکاؤنٹ حذف نہیں کیا جا سکتا۔' : 'The demo account cannot be deleted.');
       return;
     }
     setUsers(prev => prev.filter(u => u.id !== id));
@@ -837,6 +963,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const toggleUserStatus = (id: string) => {
+    if (blockDemoUserMgmt()) return;
+    if (id === DEMO_USER_ID) {
+      alert(language === 'ur' ? 'ڈیمو اکاؤنٹ غیر فعال نہیں کیا جا سکتا۔' : 'The demo account cannot be deactivated.');
+      return;
+    }
     setUsers(prev => prev.map(u => {
       if (u.id === id) {
         return { ...u, isActive: !u.isActive };
@@ -1306,7 +1437,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `alasad-constructors-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = isDemoMode
+      ? `alasad-demo-backup-${new Date().toISOString().split('T')[0]}.json`
+      : `alasad-constructors-backup-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1348,10 +1481,30 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTaxInvoices(INITIAL_TAX_INVOICES);
     setRfqs(INITIAL_RFQS);
     setUsers(INITIAL_USERS);
-    setCurrentUser(INITIAL_USERS[0]);
+    // In demo mode the reset must NOT switch the session to the admin account.
+    if (!isDemoMode) setCurrentUser(INITIAL_USERS[0]);
     setReadNotificationIds([]);
     setDismissedNotificationIds([]);
     setActiveProjectId('all');
+  };
+
+  // Demo banner action: wipe ONLY the demo namespace keys and re-seed the
+  // sample data. Real company storage is never touched.
+  const resetDemoData = () => {
+    if (!isDemoMode) return;
+    try {
+      localStorage.removeItem(DEMO_STORAGE_KEY);
+      localStorage.removeItem(DEMO_SYNC_QUEUE_KEY);
+      localStorage.removeItem(DEMO_LAST_SYNC_KEY);
+    } catch (e) {}
+    loadNamespaceData(true);
+    const demoUser = INITIAL_USERS.find(u => u.id === DEMO_USER_ID);
+    if (demoUser) {
+      setCurrentUser(demoUser);
+      try {
+        sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(demoUser));
+      } catch (e) {}
+    }
   };
 
   const resetFilters = () => {
@@ -1426,6 +1579,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         exportDataJson,
         importDataJson,
         resetToSampleData,
+        isDemoMode,
+        resetDemoData,
         currentUser,
         users,
         isAuthenticated,
