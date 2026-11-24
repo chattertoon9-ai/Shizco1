@@ -46,3 +46,4 @@ npm run build
 <!-- Trigger clean Pages deploy for demo email update -->
 <!-- Trigger clean Pages deploy for A4 print + Executive Summary update -->
 <!-- Trigger clean Pages deploy for Site Intelligence AI 405 fix -->
+<!-- Trigger clean Pages deploy for A4 print black-background fix -->
