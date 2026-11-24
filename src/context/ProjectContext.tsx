@@ -397,7 +397,26 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const migrateOwnerUser = (list: AuthUser[]): AuthUser[] =>
     list.map(u =>
       u.id === 'user-admin'
-        ? { ...u, name: 'Al Asad Constructors', nameUrdu: 'الاسد کنسٹرکٹرز', email: 'info@alasadconstructors.com', password: 'Asad@3456', designation: 'Owner' }
+        ? {
+            ...u,
+            name: 'Al Asad Constructors',
+            nameUrdu: 'الاسد کنسٹرکٹرز',
+            email: 'info@alasadconstructors.com',
+            password: 'Asad@3456',
+            designation: 'Owner',
+            // ROOT-CAUSE FIX (2026-11-24): the Owner login opened Invoice/RFQ
+            // behind an "Admin Privilege Required" wall because this repair
+            // only fixed email/password/name — a cached Owner record whose
+            // role/permissions were ever mangled (old app version, legacy
+            // cache key, or an edit save) stayed demoted forever, and login()
+            // then installed that demoted record as the session user. The
+            // Owner record is the root admin BY DEFINITION: force its role,
+            // full rights and active state here so no stale cache can ever
+            // demote it again.
+            role: 'admin',
+            permissions: DEFAULT_ADMIN_PERMISSIONS,
+            isActive: true,
+          }
         : u
     );
   // Browsers that cached the users list before the demo account existed would
@@ -416,7 +435,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         : u
     );
   };
-  const [users, setUsers] = useState<AuthUser[]>(ensureDemoUser(migrateOwnerUser(cached?.users || INITIAL_USERS)));
+  // Healed users list (Owner record canonicalised, demo account present) —
+  // used for the users state AND to re-resolve a restored session, so a
+  // session saved while the cached Owner record was demoted cannot keep the
+  // Owner locked out after the record is repaired.
+  const healedUsers = ensureDemoUser(migrateOwnerUser(cached?.users || INITIAL_USERS));
+  const [users, setUsers] = useState<AuthUser[]>(healedUsers);
 
   // Forgot-password + new-account requests. Kept in state so they persist
   // inside the namespaced payload (real vs demo storage never mixes).
@@ -428,9 +452,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       // A demo session takes precedence — it also puts the provider in demo mode.
       const demoSession = sessionStorage.getItem(DEMO_SESSION_KEY);
-      if (demoSession) return JSON.parse(demoSession);
+      if (demoSession) {
+        const parsed = JSON.parse(demoSession) as AuthUser;
+        return healedUsers.find(u => u.id === parsed.id) ?? parsed;
+      }
       const sessionUser = sessionStorage.getItem(SESSION_KEY);
-      if (sessionUser) return JSON.parse(sessionUser);
+      if (sessionUser) {
+        const parsed = JSON.parse(sessionUser) as AuthUser;
+        return healedUsers.find(u => u.id === parsed.id) ?? parsed;
+      }
     } catch (e) {}
     return null;
   });
@@ -881,8 +911,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const login = (email: string, password?: string, _role?: UserRole): { success: boolean; message?: string } => {
     const trimmedEmail = email.trim().toLowerCase();
     
-    // Check against dynamically managed users
-    const matched = users.find(u => u.email.toLowerCase() === trimmedEmail);
+    // Check against dynamically managed users — resolved through the Owner
+    // migration, so a stale cached record can never sign the Owner in with
+    // demoted rights (that is what put the "Admin Privilege Required" wall
+    // in front of Invoice/RFQ after a correct Owner login).
+    const healedList = ensureDemoUser(migrateOwnerUser(users));
+    const matched = healedList.find(u => u.email.toLowerCase() === trimmedEmail);
     if (!matched) {
       return { 
         success: false, 

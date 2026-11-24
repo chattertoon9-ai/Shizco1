@@ -50,6 +50,7 @@ export const TaxComplianceView: React.FC = () => {
     rfqs,
     language,
     isAdmin,
+    hasPermission,
     isDemoMode,
     activeProjectId,
     setActiveProjectId,
@@ -154,7 +155,12 @@ export const TaxComplianceView: React.FC = () => {
 
   // ADMIN PERMISSION GUARD — the demo account may explore this screen too
   // (demo storage only); every other non-admin still sees the wall.
-  if (!isAdmin && !isDemoMode) {
+  // Belt-and-braces (2026-11-24): accept the explicit canManageTax right as
+  // well as the admin role, so the Owner — who holds full tax rights — is
+  // never walled off Invoice/RFQ even if only the role field of a cached
+  // record were ever wrong again. Engineer/QA keep canManageTax: false, so
+  // their wall is unchanged.
+  if (!isAdmin && !hasPermission('canManageTax') && !isDemoMode) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4 animate-fadeIn">
         <div className="max-w-sm w-full bg-slate-900 border border-red-900/40 rounded-2xl p-6 text-center shadow-2xl space-y-4">

@@ -319,7 +319,10 @@ export const UserManagementView: React.FC = () => {
   // The demo account may open and explore this screen (view only). Creating,
   // editing, deleting or deactivating users stays blocked in demo mode and is
   // refused with a friendly notice by the context guards.
-  if (!isAdmin && !isDemoMode) {
+  // (2026-11-24: same belt-and-braces as the Tax screen — accept the explicit
+  // canManageUsers right as well as the admin role, so the Owner is never
+  // walled off here either. Engineer/QA keep canManageUsers: false.)
+  if (!isAdmin && !hasPermission('canManageUsers') && !isDemoMode) {
     return (
       <div className="py-16 text-center max-w-md mx-auto space-y-4 animate-fadeIn">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-xl shadow-rose-950/40">
