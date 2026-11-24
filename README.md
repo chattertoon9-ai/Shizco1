@@ -49,3 +49,5 @@ npm run build
 <!-- Trigger clean Pages deploy for A4 print black-background fix -->
 
 <!-- Trigger clean Pages deploy retry for Owner permission fix (run #28 deploy failed) -->
+
+<!-- Trigger clean Pages deploy retry for RFQ/Invoice print redesign (deploy not live 13 min after d2dfe56) -->
