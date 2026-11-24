@@ -178,6 +178,20 @@
     border-color: #cbd5e1 !important;
   }
 
+  /* Quotation / Sales Tax Invoice print forms: keep their black borders and
+     coloured header bars exactly as designed — the generic rule above would
+     otherwise wash all table borders to slate and drop the header colours. */
+  .printable-a4-document,
+  .printable-a4-document * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-form-table th,
+  .print-form-table td {
+    border-color: #000000 !important;
+  }
+
   /* Prevent awkward splits on signature and totals blocks */
   .print-avoid-break {
     page-break-inside: avoid !important;

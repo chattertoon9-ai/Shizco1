@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { translations, formatCurrency } from '../utils/translations';
 import { COMPANY_TAX_PROFILE } from '../data/initialData';
+import { amountInWordsPKR } from '../utils/amountToWords';
 import { TaxInvoice, TaxInvoiceItem, RFQDocument, RFQLineItem, RFQQuotation } from '../types';
 import {
   FileText,
@@ -95,6 +96,13 @@ export const TaxComplianceView: React.FC = () => {
   const [invDueDate, setInvDueDate] = useState(new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]);
   const [invType, setInvType] = useState<'sale' | 'purchase'>('sale');
   const [invNotes, setInvNotes] = useState('');
+  // Sales Tax Invoice print fields (Customer / Misc boxes) — all optional.
+  const [invCustomerAddress, setInvCustomerAddress] = useState('');
+  const [invCustomerCity, setInvCustomerCity] = useState('');
+  const [invCustomerZip, setInvCustomerZip] = useState('');
+  const [invCustomerPhone, setInvCustomerPhone] = useState('');
+  const [invSwoNo, setInvSwoNo] = useState('');
+  const [invCompanyPhone, setInvCompanyPhone] = useState('');
 
   // Invoice Items
   const [invItems, setInvItems] = useState<Array<{
@@ -119,6 +127,13 @@ export const TaxComplianceView: React.FC = () => {
   const [rfqProject, setRfqProject] = useState(projects[0]?.id || 'proj-01');
   const [rfqNumber, setRfqNumber] = useState(`AAC-RFQ-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`);
   const [rfqTitle, setRfqTitle] = useState('');
+  // Quotation print fields — client / site default to the selected project;
+  // quoteNo / subject fall back to rfqNumber / title in print when blank.
+  const [rfqAttnTo, setRfqAttnTo] = useState('');
+  const [rfqClientName, setRfqClientName] = useState(projects[0]?.client || '');
+  const [rfqProjectSite, setRfqProjectSite] = useState(projects[0]?.location || '');
+  const [rfqQuoteNo, setRfqQuoteNo] = useState('');
+  const [rfqSubject, setRfqSubject] = useState('');
   const [rfqCategory, setRfqCategory] = useState<RFQDocument['category']>('ready_mix');
   const [rfqDeadline, setRfqDeadline] = useState(new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0]);
   const [rfqBudget, setRfqBudget] = useState(1500000);
@@ -303,6 +318,12 @@ export const TaxComplianceView: React.FC = () => {
       clientNtn: invClientNtn.trim(),
       clientStrn: invClientStrn.trim() || undefined,
       clientSrbNumber: invClientSrb.trim() || undefined,
+      customerAddress: invCustomerAddress.trim() || undefined,
+      customerCity: invCustomerCity.trim() || undefined,
+      customerZip: invCustomerZip.trim() || undefined,
+      customerPhone: invCustomerPhone.trim() || undefined,
+      swoNo: invSwoNo.trim() || undefined,
+      companyPhone: invCompanyPhone.trim() || undefined,
       companyNtn: COMPANY_TAX_PROFILE.ntn,
       companyStrn: COMPANY_TAX_PROFILE.strn,
       companySrb: COMPANY_TAX_PROFILE.srb,
@@ -320,6 +341,12 @@ export const TaxComplianceView: React.FC = () => {
 
     setIsNewInvoiceOpen(false);
     setInvNotes('');
+    setInvCustomerAddress('');
+    setInvCustomerCity('');
+    setInvCustomerZip('');
+    setInvCustomerPhone('');
+    setInvSwoNo('');
+    setInvCompanyPhone('');
     setInvNumber(`AAC-INV-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
   };
 
@@ -348,11 +375,19 @@ export const TaxComplianceView: React.FC = () => {
       lineItems: mappedLines,
       quotations: [],
       estimatedBudget: Number(rfqBudget) || 1000000,
-      termsAndConditions: rfqTerms.trim()
+      termsAndConditions: rfqTerms.trim(),
+      attnTo: rfqAttnTo.trim() || undefined,
+      clientName: rfqClientName.trim() || undefined,
+      projectSite: rfqProjectSite.trim() || undefined,
+      quoteNo: rfqQuoteNo.trim() || undefined,
+      subject: rfqSubject.trim() || undefined
     });
 
     setIsNewRFQOpen(false);
     setRfqTitle('');
+    setRfqAttnTo('');
+    setRfqQuoteNo('');
+    setRfqSubject('');
     setRfqNumber(`AAC-RFQ-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`);
   };
 
@@ -1277,6 +1312,73 @@ export const TaxComplianceView: React.FC = () => {
                 </div>
               </div>
 
+              {/* Sales Tax Invoice print fields: Customer + Misc boxes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Buyer Address</label>
+                  <input
+                    type="text"
+                    placeholder="Street / office address"
+                    value={invCustomerAddress}
+                    onChange={(e) => setInvCustomerAddress(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">Buyer Phone</label>
+                  <input
+                    type="text"
+                    value={invCustomerPhone}
+                    onChange={(e) => setInvCustomerPhone(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">City</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Karachi"
+                    value={invCustomerCity}
+                    onChange={(e) => setInvCustomerCity(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">ZIP</label>
+                  <input
+                    type="text"
+                    value={invCustomerZip}
+                    onChange={(e) => setInvCustomerZip(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">SWO No. (Work Order Ref)</label>
+                  <input
+                    type="text"
+                    placeholder="Sales Work Order number"
+                    value={invSwoNo}
+                    onChange={(e) => setInvSwoNo(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">Company Phone (Misc box)</label>
+                  <input
+                    type="text"
+                    value={invCompanyPhone}
+                    onChange={(e) => setInvCompanyPhone(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-400 mb-1">Invoice Date</label>
@@ -1486,115 +1588,175 @@ export const TaxComplianceView: React.FC = () => {
               </div>
             </div>
 
-            {/* Printable Invoice Header */}
-            <div className="pt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex items-center gap-3">
-                <img src="/logo.jpg" alt="Al Asad Logo" className="w-14 h-14 rounded-xl object-cover border border-slate-300 shadow-sm" />
-                <div>
-                  <h2 className="text-xl font-extrabold text-blue-950 tracking-tight">
-                    AL ASAD CONSTRUCTORS (PVT) LTD
-                  </h2>
-                  <p className="text-xs text-slate-600 font-medium">Civil Engineering & Turnkey Infrastructure Contractors</p>
-                  <p className="text-[11px] text-slate-500">{COMPANY_TAX_PROFILE.registeredAddress}</p>
-                </div>
-              </div>
+            {/* Printable Invoice — SALES TAX INVOICE layout */}
+            <div className="pt-2">
+              <h2 className="text-center text-2xl font-bold italic tracking-wide text-black">
+                SALES TAX INVOICE
+              </h2>
 
-              <div className="text-right">
-                <div className="inline-block px-3 py-1 rounded bg-blue-900 text-white text-xs font-bold tracking-wider uppercase mb-1">
-                  TAX INVOICE
-                </div>
-                <div className="text-sm font-bold font-mono text-slate-800">{selectedInvoiceForPrint.invoiceNumber}</div>
-                <div className="text-xs text-slate-500">Date: {selectedInvoiceForPrint.date}</div>
-              </div>
-            </div>
-
-            {/* Tax Registrations Strip */}
-            <div className="mt-4 p-2.5 bg-slate-50 rounded-lg border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-1 text-xs font-mono">
-              <div><span className="text-slate-500">NTN:</span> <strong>{selectedInvoiceForPrint.companyNtn}</strong></div>
-              <div><span className="text-slate-500">STRN:</span> <strong>{selectedInvoiceForPrint.companyStrn}</strong></div>
-              <div><span className="text-slate-500">SRB:</span> <strong>{selectedInvoiceForPrint.companySrb}</strong></div>
-            </div>
-
-            {/* Buyer Details */}
-            <div className="mt-4 p-4 rounded-xl border border-slate-200 text-xs space-y-1">
-              <div className="text-slate-500 uppercase font-semibold text-[10px]">Billed To (Buyer):</div>
-              <div className="text-sm font-bold text-slate-900">{selectedInvoiceForPrint.clientOrVendorName}</div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 font-mono text-[11px]">
-                <span>Buyer NTN: <strong>{selectedInvoiceForPrint.clientNtn}</strong></span>
-                {selectedInvoiceForPrint.clientStrn && <span>STRN: <strong>{selectedInvoiceForPrint.clientStrn}</strong></span>}
-                {selectedInvoiceForPrint.clientSrbNumber && <span>SRB: <strong>{selectedInvoiceForPrint.clientSrbNumber}</strong></span>}
-              </div>
-            </div>
-
-            {/* Line Items Table */}
-            <div className="mt-5 overflow-x-auto print:overflow-visible">
-              <table className="w-full text-left text-xs border border-slate-200">
-                <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] border-b border-slate-200">
-                  <tr>
-                    <th className="p-2.5">Item Description</th>
-                    <th className="p-2.5">Class</th>
-                    <th className="p-2.5 text-center">Qty</th>
-                    <th className="p-2.5 text-right">Rate</th>
-                    <th className="p-2.5 text-right">Tax Applied</th>
-                    <th className="p-2.5 text-right font-bold">Total (PKR)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {selectedInvoiceForPrint.items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="p-2.5 font-medium">{item.description}</td>
-                      <td className="p-2.5 capitalize text-slate-600 text-[11px]">{item.itemType}</td>
-                      <td className="p-2.5 text-center font-mono">{item.quantity} {item.unit}</td>
-                      <td className="p-2.5 text-right font-mono">{item.unitPrice.toLocaleString()}</td>
-                      <td className="p-2.5 text-right font-mono text-slate-600">
-                        {item.fbrGstRate > 0 ? `FBR ${item.fbrGstRate}%` : `SRB ${item.srbSstRate}%`}
-                      </td>
-                      <td className="p-2.5 text-right font-mono font-semibold">{item.totalAmount.toLocaleString()}</td>
+              {/* S.NO box */}
+              <div className="mt-6 flex justify-end">
+                <table className="print-form-table border-2 border-black text-sm">
+                  <tbody>
+                    <tr>
+                      <td className="border border-black px-4 py-1.5 font-bold text-center">S.NO</td>
+                      <td className="border border-black px-4 py-1.5 font-mono font-bold text-center">{selectedInvoiceForPrint.invoiceNumber}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-2 border-t-2 border-black" />
 
-            {/* Totals Summary */}
-            <div className="mt-4 flex justify-end print-avoid-break">
-              <div className="w-full max-w-72 sm:w-72 space-y-1.5 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                <div className="flex justify-between text-slate-600">
-                  <span>Subtotal Amount:</span>
-                  <span className="font-mono font-semibold text-slate-900">{selectedInvoiceForPrint.subtotal.toLocaleString()}</span>
+              {/* Customer + Misc boxes */}
+              <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:gap-6">
+                <div className="relative flex-1 border border-black">
+                  <span className="absolute -top-2.5 left-2 bg-white px-1.5 text-xs font-bold">Customer</span>
+                  <table className="print-form-table w-full text-xs">
+                    <tbody>
+                      <tr>
+                        <td className="w-16 border border-black px-2 py-1.5 font-bold">Name</td>
+                        <td className="border border-black px-2 py-1.5 font-semibold">{selectedInvoiceForPrint.clientOrVendorName}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">Address</td>
+                        <td className="border border-black px-2 py-1.5">{selectedInvoiceForPrint.customerAddress || '—'}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">City</td>
+                        <td className="border border-black px-2 py-1.5">
+                          {selectedInvoiceForPrint.customerCity || '—'}
+                          <span className="float-right text-[11px]"><span className="font-bold mr-2">ZIP</span>{selectedInvoiceForPrint.customerZip || '—'}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">Phone</td>
+                        <td className="border border-black px-2 py-1.5 font-mono">{selectedInvoiceForPrint.customerPhone || '—'}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">GST</td>
+                        <td className="border border-black px-2 py-1.5 font-mono">{selectedInvoiceForPrint.clientStrn || '—'}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">NTN</td>
+                        <td className="border border-black px-2 py-1.5 font-mono">{selectedInvoiceForPrint.clientNtn}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                {selectedInvoiceForPrint.totalFbrGst > 0 && (
-                  <div className="flex justify-between text-emerald-700">
-                    <span>FBR Sales Tax (18%):</span>
-                    <span className="font-mono font-semibold">+{selectedInvoiceForPrint.totalFbrGst.toLocaleString()}</span>
-                  </div>
-                )}
-                {selectedInvoiceForPrint.totalSrbSst > 0 && (
-                  <div className="flex justify-between text-indigo-700">
-                    <span>SRB Sindh Sales Tax (13%):</span>
-                    <span className="font-mono font-semibold">+{selectedInvoiceForPrint.totalSrbSst.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-amber-700">
-                  <span>WHT Deduction (Sec 153):</span>
-                  <span className="font-mono font-semibold">-{selectedInvoiceForPrint.totalWhtDeduction.toLocaleString()}</span>
-                </div>
-                <div className="pt-2 border-t border-slate-300 flex justify-between font-bold text-sm text-blue-950">
-                  <span>Net Payable Amount:</span>
-                  <span className="font-mono">PKR {selectedInvoiceForPrint.netPayable.toLocaleString()}</span>
+
+                <div className="relative w-full border border-black sm:w-[38%]">
+                  <span className="absolute -top-2.5 left-2 bg-white px-1.5 text-xs font-bold">Misc</span>
+                  <table className="print-form-table w-full text-xs">
+                    <tbody>
+                      <tr>
+                        <td className="w-20 border border-black px-2 py-1.5 font-bold">Date</td>
+                        <td className="border border-black px-2 py-1.5 font-mono">{selectedInvoiceForPrint.date}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">SWO NO</td>
+                        <td className="border border-black px-2 py-1.5 font-mono font-semibold">{selectedInvoiceForPrint.swoNo || '—'}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">SNTN</td>
+                        <td className="border border-black px-2 py-1.5 font-mono">{selectedInvoiceForPrint.companyStrn}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5 font-bold">Phone</td>
+                        <td className="border border-black px-2 py-1.5 font-mono">{selectedInvoiceForPrint.companyPhone || '—'}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-black px-2 py-1.5">&nbsp;</td>
+                        <td className="border border-black px-2 py-1.5">&nbsp;</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
 
-            {/* Signature & Seal */}
-            <div className="mt-10 pt-6 border-t border-slate-200 flex flex-col gap-6 sm:flex-row sm:justify-between text-xs text-slate-500 print-avoid-break">
-              <div className="text-center">
-                <div className="w-full max-w-40 sm:w-40 border-b border-slate-400 mb-1"></div>
-                <span>Prepared By (Accountant)</span>
+              {/* Items table with totals */}
+              <div className="mt-6">
+                <table className="print-form-table w-full border border-black text-xs">
+                  <thead>
+                    <tr>
+                      <th className="w-14 border border-black px-2 py-1.5 text-center">Qty</th>
+                      <th className="border border-black px-2 py-1.5 text-center">Description</th>
+                      <th className="w-28 border border-black px-2 py-1.5 text-center">Unit Price</th>
+                      <th className="w-28 border border-black px-2 py-1.5 text-center">TOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInvoiceForPrint.items.map((item) => (
+                      <tr key={item.id}>
+                        <td className="border border-black px-2 py-2 text-center font-mono">{item.quantity}</td>
+                        <td className="border border-black px-2 py-2 font-medium">
+                          {item.description}
+                          <span className="text-slate-500"> ({item.unit})</span>
+                        </td>
+                        <td className="border border-black px-2 py-2 text-right font-mono">{item.unitPrice.toLocaleString()}</td>
+                        <td className="border border-black px-2 py-2 text-right font-mono font-semibold">{item.totalAmount.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                    {Array.from({ length: Math.max(0, 8 - selectedInvoiceForPrint.items.length) }).map((_, i) => (
+                      <tr key={`blank-${i}`}>
+                        <td className="border border-black px-2 py-2.5">&nbsp;</td>
+                        <td className="border border-black px-2 py-2.5">&nbsp;</td>
+                        <td className="border border-black px-2 py-2.5">&nbsp;</td>
+                        <td className="border border-black px-2 py-2.5">&nbsp;</td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td className="border border-black px-2 py-1" colSpan={2} />
+                      <td className="border border-black px-2 py-1 text-right text-[11px]">Subtotal</td>
+                      <td className="border border-black px-2 py-1 text-right font-mono">{selectedInvoiceForPrint.subtotal.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black px-2 py-1" colSpan={2} />
+                      <td className="border border-black px-2 py-1 text-right text-[11px]">GST</td>
+                      <td className="border border-black px-2 py-1 text-right font-mono">{(selectedInvoiceForPrint.totalFbrGst + selectedInvoiceForPrint.totalSrbSst).toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black px-2 py-1" colSpan={2} />
+                      <td className="border border-black px-2 py-1 text-right text-[11px] font-bold">TOTAL</td>
+                      <td className="border border-black px-2 py-1 text-right font-mono font-bold">{selectedInvoiceForPrint.grandTotal.toLocaleString()}</td>
+                    </tr>
+                    {selectedInvoiceForPrint.totalWhtDeduction > 0 && (
+                      <>
+                        <tr>
+                          <td className="border border-black px-2 py-1" colSpan={2} />
+                          <td className="border border-black px-2 py-1 text-right text-[11px]">Less: WHT</td>
+                          <td className="border border-black px-2 py-1 text-right font-mono">-{selectedInvoiceForPrint.totalWhtDeduction.toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-black px-2 py-1" colSpan={2} />
+                          <td className="border border-black px-2 py-1 text-right text-[11px] font-bold">Net Payable</td>
+                          <td className="border border-black px-2 py-1 text-right font-mono font-bold">{selectedInvoiceForPrint.netPayable.toLocaleString()}</td>
+                        </tr>
+                      </>
+                    )}
+                  </tbody>
+                </table>
               </div>
-              <div className="text-center">
-                <div className="w-full max-w-40 sm:w-40 border-b border-slate-400 mb-1"></div>
-                <span>Authorized Director / Stamp</span>
+
+              {/* Inwords + signature */}
+              <div className="mt-6 flex flex-col gap-6 sm:flex-row print-avoid-break">
+                <div className="flex-1">
+                  <div className="relative border border-black">
+                    <span className="absolute -top-2.5 left-2 bg-white px-1.5 text-xs font-bold">Inwords</span>
+                    <p className="px-3 py-2.5 text-xs leading-relaxed">{amountInWordsPKR(selectedInvoiceForPrint.grandTotal)}</p>
+                  </div>
+                  <div className="mt-12 space-y-10">
+                    <div className="w-3/4 border-b border-black" />
+                    <div className="w-3/4 border-b border-black" />
+                    <div className="w-3/4 border-b border-black" />
+                  </div>
+                </div>
+                <div className="flex w-full shrink-0 items-end sm:w-60">
+                  <div className="w-full border-2 border-black bg-[#fdf6d8] px-3 py-4 text-center text-sm font-bold leading-snug">
+                    ON BEHALF OF
+                    <br />
+                    AL ASAD CONSTRUCTORS
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1608,7 +1770,7 @@ export const TaxComplianceView: React.FC = () => {
             {/* Top Bar with Print & Close */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
-                Official Request for Quotation (RFQ) Tender Document (A4)
+                Official Quotation Document (A4)
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -1616,7 +1778,7 @@ export const TaxComplianceView: React.FC = () => {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold shadow hover:bg-emerald-700 cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
-                  <span>Print RFQ (A4)</span>
+                  <span>Print Quotation (A4)</span>
                 </button>
                 <button
                   onClick={() => setSelectedRFQForPrint(null)}
@@ -1627,126 +1789,150 @@ export const TaxComplianceView: React.FC = () => {
               </div>
             </div>
 
-            {/* Printable RFQ Header */}
-            <div className="pt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex items-center gap-3">
-                <img src="/logo.jpg" alt="Al Asad Logo" className="w-14 h-14 rounded-xl object-cover border border-slate-300 shadow-sm" />
-                <div>
-                  <h2 className="text-xl font-extrabold text-blue-950 tracking-tight">
-                    AL ASAD CONSTRUCTORS (PVT) LTD
-                  </h2>
-                  <p className="text-xs text-slate-600 font-medium">Procurement & Tendering Department</p>
-                  <p className="text-[11px] text-slate-500">{COMPANY_TAX_PROFILE.registeredAddress}</p>
-                </div>
+            {/* Printable RFQ — Quotation layout.
+                Top 2 inches stay blank in print for pre-printed letterhead paper:
+                the app prints no letterhead header of its own. */}
+            <div style={{ height: '2in' }} aria-hidden="true" />
+            <p className="print:hidden mb-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
+              Upar 2 inch jagah letterhead ke liye khali hai — print mein ye jagah khali rahegi (pehle se chhapa hua letterhead paper).
+            </p>
+
+            {/* Quotation To + Quotation Details */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
+              <div className="flex-1">
+                <div className="border border-black bg-[#eda87c] px-2 py-1 text-xs font-bold">Quotation To</div>
+                <table className="print-form-table w-full border border-black text-xs">
+                  <tbody>
+                    <tr>
+                      <td className="w-20 border border-black px-2 py-1.5 font-bold">Attn To</td>
+                      <td className="border border-black px-2 py-1.5 font-semibold">{selectedRFQForPrint.attnTo || '—'}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black px-2 py-1.5 font-bold">Client</td>
+                      <td className="border border-black px-2 py-1.5 font-semibold">{selectedRFQForPrint.clientName || projects.find(p => p.id === selectedRFQForPrint.projectId)?.client || '—'}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black px-2 py-1.5 font-bold">Project Site</td>
+                      <td className="border border-black px-2 py-1.5">{selectedRFQForPrint.projectSite || projects.find(p => p.id === selectedRFQForPrint.projectId)?.location || '—'}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
-              <div className="text-right">
-                <div className="inline-block px-3 py-1 rounded bg-emerald-900 text-white text-xs font-bold tracking-wider uppercase mb-1">
-                  REQUEST FOR QUOTATION
-                </div>
-                <div className="text-sm font-bold font-mono text-slate-800">{selectedRFQForPrint.rfqNumber}</div>
-                <div className="text-xs text-slate-500">Issue Date: {selectedRFQForPrint.issueDate}</div>
-                <div className="text-xs font-bold text-amber-700">Deadline: {selectedRFQForPrint.submissionDeadline}</div>
+              <div className="w-full sm:w-[42%]">
+                <div className="border border-black bg-[#eda87c] px-2 py-1 text-center text-xs font-bold">Quotation Details</div>
+                <table className="print-form-table w-full border border-black text-xs">
+                  <tbody>
+                    <tr>
+                      <td className="w-20 border border-black px-2 py-1.5 font-bold">Quote No.</td>
+                      <td className="border border-black px-2 py-1.5 text-center font-mono font-semibold">{selectedRFQForPrint.quoteNo || selectedRFQForPrint.rfqNumber}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black px-2 py-1.5 font-bold">RFQ No.</td>
+                      <td className="border border-black px-2 py-1.5 text-center font-mono">{selectedRFQForPrint.rfqNumber}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black px-2 py-1.5 font-bold">Date</td>
+                      <td className="border border-black px-2 py-1.5 text-center font-mono">{selectedRFQForPrint.issueDate}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black px-2 py-1.5">&nbsp;</td>
+                      <td className="border border-black px-2 py-1.5">&nbsp;</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* Tax Registrations Strip */}
-            <div className="mt-4 p-2.5 bg-slate-50 rounded-lg border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-1 text-xs font-mono">
-              <div><span className="text-slate-500">NTN:</span> <strong>{COMPANY_TAX_PROFILE.ntn}</strong></div>
-              <div><span className="text-slate-500">STRN:</span> <strong>{COMPANY_TAX_PROFILE.strn}</strong></div>
-              <div><span className="text-slate-500">SRB:</span> <strong>{COMPANY_TAX_PROFILE.srb}</strong></div>
+            {/* Subject */}
+            <div className="mt-5 flex border border-black bg-[#8fb4d9] text-xs">
+              <span className="border-r border-black px-2 py-1.5 font-bold">SUBJECT:</span>
+              <span className="px-2 py-1.5 font-bold underline underline-offset-2">{(selectedRFQForPrint.subject || `QUOTATION FOR ${selectedRFQForPrint.title}`).toUpperCase()}</span>
             </div>
 
-            {/* Tender Scope Details */}
-            <div className="mt-4 p-4 rounded-xl border border-slate-200 text-xs space-y-1">
-              <div className="text-slate-500 uppercase font-semibold text-[10px]">Tender Scope & Site Details:</div>
-              <div className="text-sm font-bold text-slate-900">{selectedRFQForPrint.title}</div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 font-mono text-[11px] pt-1">
-                <span>Project: <strong>{projects.find(p => p.id === selectedRFQForPrint.projectId)?.name || selectedRFQForPrint.projectId}</strong></span>
-                <span>Category: <strong className="uppercase">{selectedRFQForPrint.category.replace(/_/g, ' ')}</strong></span>
-                <span>Budget: <strong>PKR {selectedRFQForPrint.estimatedBudget.toLocaleString()}</strong></span>
-              </div>
-            </div>
+            {/* Cover letter */}
+            <p className="mt-4 text-xs leading-relaxed">Dear Sir/Madam,</p>
+            <p className="mt-1 text-xs leading-relaxed">
+              We are pleased to submit our quotation for the above-mentioned work. We appreciate the opportunity to work with your organization and assure you of our commitment to quality, safety, timely execution, and professional service. Please find our rates below.
+            </p>
 
-            {/* Scope Line Items Table */}
-            <div className="mt-5 overflow-x-auto print:overflow-visible">
-              <h4 className="text-xs font-bold text-slate-800 uppercase mb-1.5">Required Bill of Quantities / Scope:</h4>
-              <table className="w-full text-left text-xs border border-slate-200">
-                <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] border-b border-slate-200">
-                  <tr>
-                    <th className="p-2.5">Item #</th>
-                    <th className="p-2.5">Material / Work Description</th>
-                    <th className="p-2.5 text-center">Quantity</th>
-                    <th className="p-2.5">Unit</th>
-                    <th className="p-2.5">Specification Standard</th>
+            {/* Items table */}
+            <div className="mt-4">
+              <table className="print-form-table w-full border border-black text-xs">
+                <thead>
+                  <tr className="bg-[#8fb4d9]">
+                    <th className="w-12 border border-black px-2 py-1.5 text-center">S.No</th>
+                    <th className="border border-black px-2 py-1.5 text-center">Description</th>
+                    <th className="w-14 border border-black px-2 py-1.5 text-center">Qty</th>
+                    <th className="w-16 border border-black px-2 py-1.5 text-center">Unit</th>
+                    <th className="w-20 border border-black px-2 py-1.5 text-center">Rate</th>
+                    <th className="w-24 border border-black px-2 py-1.5 text-center">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody>
                   {selectedRFQForPrint.lineItems.map((item, idx) => (
                     <tr key={item.id}>
-                      <td className="p-2.5 font-mono text-slate-500">{idx + 1}</td>
-                      <td className="p-2.5 font-medium">{item.description}</td>
-                      <td className="p-2.5 text-center font-mono font-bold">{item.quantity}</td>
-                      <td className="p-2.5 font-mono text-slate-600">{item.unit}</td>
-                      <td className="p-2.5 text-slate-600 text-[11px]">ASTM / BS Pakistan Compliant</td>
+                      <td className="border border-black px-2 py-2 text-center font-mono">{idx + 1}</td>
+                      <td className="border border-black px-2 py-2">
+                        <span className="font-semibold">{item.description}</span>
+                        {item.specification && <span className="block text-[11px] text-slate-600">{item.specification}</span>}
+                      </td>
+                      <td className="border border-black px-2 py-2 text-center font-mono">{item.quantity}</td>
+                      <td className="border border-black px-2 py-2 text-center font-mono">{item.unit}</td>
+                      <td className="border border-black px-2 py-2 text-right font-mono">{item.estimatedRate > 0 ? item.estimatedRate.toLocaleString() : '—'}</td>
+                      <td className="border border-black px-2 py-2 text-right font-mono font-semibold">{item.quantity * item.estimatedRate > 0 ? (item.quantity * item.estimatedRate).toLocaleString() : '—'}</td>
                     </tr>
                   ))}
+                  <tr className="bg-[#8fb4d9]">
+                    <td className="border border-black px-2 py-1.5" />
+                    <td className="border border-black px-2 py-1.5 font-bold">TOTAL AMOUNT</td>
+                    <td className="border border-black px-2 py-1.5" colSpan={3} />
+                    <td className="border border-black px-2 py-1.5 text-right font-mono font-bold">
+                      {(() => {
+                        const total = selectedRFQForPrint.lineItems.reduce((s, l) => s + l.quantity * l.estimatedRate, 0);
+                        return total > 0 ? total.toLocaleString() : '—';
+                      })()}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Received Bids Matrix */}
-            {selectedRFQForPrint.quotations.length > 0 && (
-              <div className="mt-5 overflow-x-auto print:overflow-visible">
-                <h4 className="text-xs font-bold text-slate-800 uppercase mb-1.5">Vendor Quotations / Bidding Matrix:</h4>
-                <table className="w-full text-left text-xs border border-slate-200">
-                  <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] border-b border-slate-200">
-                    <tr>
-                      <th className="p-2">Vendor Name</th>
-                      <th className="p-2">NTN / Filer</th>
-                      <th className="p-2 text-right">Quoted Base</th>
-                      <th className="p-2 text-right">FBR/SRB Tax</th>
-                      <th className="p-2 text-right font-bold">Total with Tax (PKR)</th>
-                      <th className="p-2 text-center">Lead Time</th>
-                      <th className="p-2 text-center">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {selectedRFQForPrint.quotations.map((q) => (
-                      <tr key={q.id}>
-                        <td className="p-2 font-medium">{q.vendorName}</td>
-                        <td className="p-2 font-mono text-[11px]">{q.vendorNtn || '-'} ({q.isFiler ? 'Filer' : 'Non-Filer'})</td>
-                        <td className="p-2 text-right font-mono">{q.quotedAmount.toLocaleString()}</td>
-                        <td className="p-2 text-right font-mono">{(q.fbrTax + q.srbTax).toLocaleString()}</td>
-                        <td className="p-2 text-right font-mono font-bold text-blue-900">{q.totalWithTax.toLocaleString()}</td>
-                        <td className="p-2 text-center font-mono">{q.leadTimeDays} days</td>
-                        <td className="p-2 text-center uppercase font-bold text-[10px]">{q.status}</td>
-                      </tr>
+            {/* Terms & Conditions (the RFQ's own terms, numbered) */}
+            {(() => {
+              const terms = selectedRFQForPrint.termsAndConditions.split(/\n+/).map(t => t.trim()).filter(Boolean);
+              if (terms.length === 0) return null;
+              return (
+                <div className="mt-5 print-avoid-break">
+                  <p className="text-xs font-bold underline underline-offset-2">Terms & Conditions:</p>
+                  <ol className="mt-1 list-none space-y-0.5 text-[11px] leading-relaxed">
+                    {terms.map((term, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="w-4 shrink-0 text-right font-mono">{i + 1}</span>
+                        <span>{term}</span>
+                      </li>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  </ol>
+                </div>
+              );
+            })()}
 
-            {/* Terms & Conditions */}
-            <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600">
-              <span className="font-bold text-slate-800 block mb-1">Tender Submission Terms & Conditions:</span>
-              <p>{selectedRFQForPrint.termsAndConditions}</p>
-              <p className="mt-1 text-slate-500">
-                • Active Taxpayer List (ATL) FBR compliance required. Withholding tax under Section 153 applicable.
-              </p>
+            {/* Closing + signature */}
+            <div className="mt-8 flex flex-col gap-4 text-xs sm:flex-row sm:justify-between print-avoid-break">
+              <div>
+                <p>In case of any query, please do not hesitate to contact the under signed.</p>
+                <p>Looking for your positive response.</p>
+                <p>Thanking you,</p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold underline underline-offset-2">Authorised Signature & Stamp</p>
+              </div>
             </div>
 
-            {/* Signature & Seal */}
-            <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col gap-6 sm:flex-row sm:justify-between text-xs text-slate-500 print-avoid-break">
-              <div className="text-center">
-                <div className="w-full max-w-44 sm:w-44 border-b border-slate-400 mb-1"></div>
-                <span>Procurement Officer</span>
-              </div>
-              <div className="text-center">
-                <div className="w-full max-w-44 sm:w-44 border-b border-slate-400 mb-1"></div>
-                <span>Resident Project Engineer (PEC Reg.)</span>
-              </div>
+            {/* Our Commitment */}
+            <div className="mt-8 border border-black bg-[#dce9f5] px-2 py-1.5 text-center print-avoid-break">
+              <p className="text-xs font-bold">Our Commitment</p>
+              <p className="text-[11px]">Quality Construction. Professional Execution. Lasting Value.</p>
             </div>
           </div>
         </div>
@@ -1785,13 +1971,42 @@ export const TaxComplianceView: React.FC = () => {
                   <label className="block text-slate-400 mb-1">Project Site</label>
                   <select
                     value={rfqProject}
-                    onChange={(e) => setRfqProject(e.target.value)}
+                    onChange={(e) => {
+                      const proj = projects.find(p => p.id === e.target.value);
+                      setRfqProject(e.target.value);
+                      if (proj) {
+                        setRfqClientName(proj.client);
+                        setRfqProjectSite(proj.location);
+                      }
+                    }}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
                   >
                     {projects.map(p => (
                       <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Attn To (Attention Person)</label>
+                  <input
+                    type="text"
+                    placeholder="Person the quotation is addressed to"
+                    value={rfqAttnTo}
+                    onChange={(e) => setRfqAttnTo(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">Client Name</label>
+                  <input
+                    type="text"
+                    value={rfqClientName}
+                    onChange={(e) => setRfqClientName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
+                  />
                 </div>
               </div>
 
@@ -1804,6 +2019,17 @@ export const TaxComplianceView: React.FC = () => {
                   onChange={(e) => setRfqTitle(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1">Project Site Address</label>
+                <input
+                  type="text"
+                  placeholder="Site address shown in the Quotation To box"
+                  value={rfqProjectSite}
+                  onChange={(e) => setRfqProjectSite(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
                 />
               </div>
 
@@ -1843,6 +2069,29 @@ export const TaxComplianceView: React.FC = () => {
                     onChange={(e) => setRfqBudget(Number(e.target.value))}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-emerald-400"
                     required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Quote No.</label>
+                  <input
+                    type="text"
+                    placeholder="Optional — defaults to RFQ No."
+                    value={rfqQuoteNo}
+                    onChange={(e) => setRfqQuoteNo(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-slate-400 mb-1">Subject (Quotation)</label>
+                  <input
+                    type="text"
+                    placeholder="Optional — defaults to QUOTATION FOR <title>"
+                    value={rfqSubject}
+                    onChange={(e) => setRfqSubject(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
                   />
                 </div>
               </div>

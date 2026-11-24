@@ -202,6 +202,13 @@ export interface TaxInvoice {
   clientNtn: string;
   clientStrn?: string;
   clientSrbNumber?: string;
+  // Sales Tax Invoice print fields (all optional — blank unless entered).
+  customerAddress?: string;
+  customerCity?: string;
+  customerZip?: string;
+  customerPhone?: string;
+  swoNo?: string; // Sales Work Order number, shown in the Misc box
+  companyPhone?: string; // Company phone shown in the Misc box
   companyNtn: string;
   companyStrn: string;
   companySrb: string;
@@ -254,6 +261,13 @@ export interface RFQDocument {
   awardedVendor?: string;
   estimatedBudget: number;
   termsAndConditions: string;
+  // Quotation print fields (all optional — blank unless entered; the print
+  // falls back to the linked project's client/location and to rfqNumber/title).
+  attnTo?: string; // Attention person in the "Quotation To" box
+  clientName?: string;
+  projectSite?: string;
+  quoteNo?: string; // Quotation number (defaults to rfqNumber in print)
+  subject?: string; // Subject line (defaults to `QUOTATION FOR <title>` in print)
 }
 
 export type ActiveTab = 
