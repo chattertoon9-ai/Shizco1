@@ -466,7 +466,8 @@ export const AccountsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-fadeIn">
+    <div className={`space-y-6 pb-12 animate-fadeIn ${selectedProjectForPrint ? 'print:space-y-0 print:pb-0' : ''}`}>
+      <div className={`space-y-6 ${selectedProjectForPrint ? 'no-print print:hidden' : ''}`}>
       {/* ------------------------------------------------------------- */}
       {/* 1. ADMIN CRITICAL BUDGET THRESHOLD ALERT BANNER               */}
       {/* ------------------------------------------------------------- */}
@@ -1614,32 +1615,33 @@ export const AccountsView: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
 
       {/* ------------------------------------------------------------- */}
       {/* 7. PRINTABLE A4 PROJECT COSTING AUDIT SLIP MODAL              */}
       {/* ------------------------------------------------------------- */}
       {selectedProjectForPrint && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
-          <div className="bg-slate-900 border border-blue-700/50 rounded-2xl w-full max-w-[210mm] shadow-2xl p-6 text-slate-100 my-8 printable-a4-document a4-print-document print:w-full print:max-w-none print:min-w-full print:p-0 print:m-0 print:rounded-none print:shadow-none print:border-none print:bg-white print:text-slate-900">
+          <div className="bg-slate-900 border border-blue-700/50 rounded-2xl w-full max-w-[210mm] shadow-2xl p-4 sm:p-6 text-slate-100 my-8 printable-a4-document a4-print-document print:w-full print:max-w-none print:min-w-full print:p-0 print:m-0 print:rounded-none print:shadow-none print:border-none print:bg-white print:text-slate-900">
             {/* Header */}
-            <div className="border-b-2 border-slate-800 pb-4">
-              <div className="flex items-start justify-between">
+            <div className="border-b-2 border-slate-800 print:border-slate-300 pb-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 print:text-emerald-800 font-bold block">
                     SHIZCON BUILDERS & ENGINEERING (PVT) LTD
                   </span>
-                  <h2 className="text-xl font-black text-white mt-0.5">
+                  <h2 className="text-xl font-black text-white print:text-slate-950 mt-0.5">
                     PROJECT COSTING & BUDGET AUDIT REPORT
                   </h2>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  <p className="text-xs text-slate-400 print:text-slate-600 font-mono mt-0.5">
                     REF: SC-COST-{selectedProjectForPrint.code}-{new Date().getFullYear()} · DATE: {new Date().toISOString().split('T')[0]}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="inline-block px-2.5 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 font-mono text-xs font-bold">
+                  <span className="inline-block px-2.5 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 print:bg-blue-50 print:text-blue-900 print:border-blue-300 font-mono text-xs font-bold">
                     {selectedProjectForPrint.code}
                   </span>
-                  <span className="block text-[10px] text-slate-400 mt-1 uppercase font-mono">
+                  <span className="block text-[10px] text-slate-400 print:text-slate-600 mt-1 uppercase font-mono">
                     Phase: {selectedProjectForPrint.currentPhase}
                   </span>
                 </div>
@@ -1647,22 +1649,22 @@ export const AccountsView: React.FC = () => {
             </div>
 
             {/* Project Overview */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-b border-slate-800/80 text-xs">
-              <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-[10px] text-slate-400 block uppercase font-mono">Project Name</span>
-                <span className="font-bold text-white text-sm block truncate">{selectedProjectForPrint.name}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-b border-slate-800/80 print:border-slate-300 text-xs">
+              <div className="bg-slate-950/70 print:bg-slate-50 p-2.5 rounded-lg border border-slate-800 print:border-slate-300">
+                <span className="text-[10px] text-slate-400 print:text-slate-500 block uppercase font-mono">Project Name</span>
+                <span className="font-bold text-white print:text-slate-950 text-sm block truncate">{selectedProjectForPrint.name}</span>
               </div>
-              <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-[10px] text-slate-400 block uppercase font-mono">Client Organization</span>
-                <span className="font-semibold text-slate-200 block truncate">{selectedProjectForPrint.client}</span>
+              <div className="bg-slate-950/70 print:bg-slate-50 p-2.5 rounded-lg border border-slate-800 print:border-slate-300">
+                <span className="text-[10px] text-slate-400 print:text-slate-500 block uppercase font-mono">Client Organization</span>
+                <span className="font-semibold text-slate-200 print:text-slate-800 block truncate">{selectedProjectForPrint.client}</span>
               </div>
-              <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-[10px] text-slate-400 block uppercase font-mono">Project Manager</span>
-                <span className="font-semibold text-blue-300 block truncate">{selectedProjectForPrint.projectManager}</span>
+              <div className="bg-slate-950/70 print:bg-slate-50 p-2.5 rounded-lg border border-slate-800 print:border-slate-300">
+                <span className="text-[10px] text-slate-400 print:text-slate-500 block uppercase font-mono">Project Manager</span>
+                <span className="font-semibold text-blue-300 print:text-blue-900 block truncate">{selectedProjectForPrint.projectManager}</span>
               </div>
-              <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-[10px] text-slate-400 block uppercase font-mono">Alert Threshold</span>
-                <span className="font-semibold text-amber-300 block font-mono">
+              <div className="bg-slate-950/70 print:bg-slate-50 p-2.5 rounded-lg border border-slate-800 print:border-slate-300">
+                <span className="text-[10px] text-slate-400 print:text-slate-500 block uppercase font-mono">Alert Threshold</span>
+                <span className="font-semibold text-amber-300 print:text-amber-800 block font-mono">
                   {selectedProjectForPrint.budgetAlertThreshold ?? 80}% Cap
                 </span>
               </div>
@@ -1670,23 +1672,23 @@ export const AccountsView: React.FC = () => {
 
             {/* Financial Costing Summary Grid */}
             <div className="py-4 space-y-4">
-              <div className="grid grid-cols-3 gap-3 font-mono text-xs">
-                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 block uppercase">Sanctioned Estimate</span>
-                  <span className="font-bold text-white text-base block mt-0.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+                <div className="p-3 bg-slate-950 print:bg-slate-50 rounded-xl border border-slate-800 print:border-slate-300">
+                  <span className="text-[10px] text-slate-400 print:text-slate-500 block uppercase">Sanctioned Estimate</span>
+                  <span className="font-bold text-white print:text-slate-950 text-base block mt-0.5">
                     PKR {selectedProjectForPrint.budget.toLocaleString()}
                   </span>
                 </div>
-                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 block uppercase">Actual Disbursed</span>
-                  <span className="font-bold text-emerald-400 text-base block mt-0.5">
+                <div className="p-3 bg-slate-950 print:bg-slate-50 rounded-xl border border-slate-800 print:border-slate-300">
+                  <span className="text-[10px] text-slate-400 print:text-slate-500 block uppercase">Actual Disbursed</span>
+                  <span className="font-bold text-emerald-400 print:text-emerald-800 text-base block mt-0.5">
                     PKR {selectedProjectForPrint.spent.toLocaleString()}
                   </span>
                 </div>
-                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 block uppercase">Cost Variance (CV)</span>
+                <div className="p-3 bg-slate-950 print:bg-slate-50 rounded-xl border border-slate-800 print:border-slate-300">
+                  <span className="text-[10px] text-slate-400 print:text-slate-500 block uppercase">Cost Variance (CV)</span>
                   <span className={`font-bold text-base block mt-0.5 ${
-                    selectedProjectForPrint.budget - selectedProjectForPrint.spent >= 0 ? 'text-blue-300' : 'text-rose-400'
+                    selectedProjectForPrint.budget - selectedProjectForPrint.spent >= 0 ? 'text-blue-300 print:text-blue-900' : 'text-rose-400 print:text-rose-800'
                   }`}>
                     PKR {(selectedProjectForPrint.budget - selectedProjectForPrint.spent).toLocaleString()}
                   </span>
@@ -1694,14 +1696,14 @@ export const AccountsView: React.FC = () => {
               </div>
 
               {/* Status Note */}
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
+              <div className="p-3 bg-slate-950/80 print:bg-slate-50 rounded-xl border border-slate-800 print:border-slate-300 text-xs">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-bold text-slate-300">Budget Consumption Audit:</span>
-                  <span className="font-mono font-bold text-amber-400">
+                  <span className="font-bold text-slate-300 print:text-slate-800">Budget Consumption Audit:</span>
+                  <span className="font-mono font-bold text-amber-400 print:text-amber-800">
                     {((selectedProjectForPrint.spent / selectedProjectForPrint.budget) * 100).toFixed(1)}% Consumed
                   </span>
                 </div>
-                <p className="text-slate-400 leading-relaxed text-[11px]">
+                <p className="text-slate-400 print:text-slate-600 leading-relaxed text-[11px]">
                   {((selectedProjectForPrint.spent / selectedProjectForPrint.budget) * 100) >= (selectedProjectForPrint.budgetAlertThreshold ?? 80)
                     ? '⚠️ WARNING: Project expenditures have exceeded the configured alert threshold. Supplementary budget allocation or site cost rationalization has been initiated.'
                     : '✅ Project expenditures remain within safe sanctioned variance parameters.'}
@@ -1710,32 +1712,32 @@ export const AccountsView: React.FC = () => {
             </div>
 
             {/* Signatures */}
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-800 text-[10px] text-slate-400 font-mono text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-slate-800 print:border-slate-300 text-[10px] text-slate-400 print:text-slate-600 font-mono text-center print-avoid-break">
               <div>
-                <div className="h-10 border-b border-dashed border-slate-700 flex items-end justify-center pb-1 text-slate-500">
+                <div className="h-10 border-b border-dashed border-slate-700 print:border-slate-400 flex items-end justify-center pb-1 text-slate-500 print:text-slate-600">
                   [Verified on Site]
                 </div>
-                <span className="block mt-1 font-bold text-slate-300">Resident Engineer</span>
-                <span className="text-slate-500 text-[9px]">Quantity Surveyor & Inspection</span>
+                <span className="block mt-1 font-bold text-slate-300 print:text-slate-900">Resident Engineer</span>
+                <span className="text-slate-500 print:text-slate-600 text-[9px]">Quantity Surveyor & Inspection</span>
               </div>
               <div>
-                <div className="h-10 border-b border-dashed border-slate-700 flex items-end justify-center pb-1 text-slate-500">
+                <div className="h-10 border-b border-dashed border-slate-700 print:border-slate-400 flex items-end justify-center pb-1 text-slate-500 print:text-slate-600">
                   [Audited]
                 </div>
-                <span className="block mt-1 font-bold text-slate-300">Chief Accountant</span>
-                <span className="text-slate-500 text-[9px]">Budget Clearance & Accounts</span>
+                <span className="block mt-1 font-bold text-slate-300 print:text-slate-900">Chief Accountant</span>
+                <span className="text-slate-500 print:text-slate-600 text-[9px]">Budget Clearance & Accounts</span>
               </div>
               <div>
-                <div className="h-10 border-b border-dashed border-slate-700 flex items-end justify-center pb-1 text-slate-500">
+                <div className="h-10 border-b border-dashed border-slate-700 print:border-slate-400 flex items-end justify-center pb-1 text-slate-500 print:text-slate-600">
                   [Approved]
                 </div>
-                <span className="block mt-1 font-bold text-slate-300">Project Director</span>
-                <span className="text-slate-500 text-[9px]">Executive Financial Sanction</span>
+                <span className="block mt-1 font-bold text-slate-300 print:text-slate-900">Project Director</span>
+                <span className="text-slate-500 print:text-slate-600 text-[9px]">Executive Financial Sanction</span>
               </div>
             </div>
 
             {/* Print Footer */}
-            <div className="pt-4 mt-3 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+            <div className="pt-4 mt-3 border-t border-slate-800 print:border-slate-300 flex items-center justify-between text-[10px] text-slate-500 print:text-slate-600 font-mono">
               <span>ShizCon Construction Enterprise ERP · Project Costing Audit Report</span>
               <span>copyright @ 2026, ShizCon</span>
             </div>

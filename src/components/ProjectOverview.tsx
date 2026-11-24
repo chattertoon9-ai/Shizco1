@@ -639,9 +639,12 @@ export const ProjectOverview: React.FC<ProjectOverviewProps> = ({
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 41, 59);
 
-      const projTitle = selectedProj ? `${selectedProj.name} (${selectedProj.code})` : 'All Active Construction Sites Combined';
-      const clientName = selectedProj ? selectedProj.client : 'Multiple Commercial & Institutional Clients';
-      const locationName = selectedProj ? selectedProj.location : 'Karachi, Bahria Town, DHA & Gwadar Port';
+      // Left column is x=18..~108mm (right column starts at x=110): trim long
+      // names so they never collide with the financial figures on A4.
+      const trimCol = (s: string, max = 50) => (s.length > max ? s.slice(0, max - 1) + '…' : s);
+      const projTitle = trimCol(selectedProj ? `${selectedProj.name} (${selectedProj.code})` : 'All Active Construction Sites Combined');
+      const clientName = trimCol(selectedProj ? selectedProj.client : 'Multiple Commercial & Institutional Clients');
+      const locationName = trimCol(selectedProj ? selectedProj.location : 'Karachi, Bahria Town, DHA & Gwadar Port');
       const currentPhaseStr = selectedProj ? selectedProj.currentPhase.toUpperCase() : 'MULTI-PHASE ACTIVE';
 
       doc.text(`Project Name: ${projTitle}`, 18, 56);

@@ -111,6 +111,14 @@
     page-break-inside: auto;
   }
 
+  /* Wide tables inside horizontal scrollers must print fully, not clip */
+  .overflow-x-auto,
+  .overflow-auto,
+  .printable-a4-document,
+  .a4-print-document {
+    overflow: visible !important;
+  }
+
   tr {
     page-break-inside: avoid;
     page-break-after: auto;

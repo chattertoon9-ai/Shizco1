@@ -1,5 +1,6 @@
 import React from 'react';
 import { useProject } from '../context/ProjectContext';
+import { formatCurrency } from '../utils/translations';
 import { ActiveTab, TaxSection, ManpowerSection } from '../types';
 import {
   Users,
@@ -169,6 +170,9 @@ export const ModulesPortalView: React.FC = () => {
     setManpowerSection,
     language,
     projects,
+    tasks,
+    labor,
+    snags,
     currentUser,
     logout,
     activeProjectId,
@@ -187,6 +191,24 @@ export const ModulesPortalView: React.FC = () => {
   };
 
   const visibleGroups = GROUPS.filter(group => !group.adminOnly || isAdmin);
+
+  // Executive Summary — the same key numbers as the Executive Overview,
+  // honouring the site filter above (all sites, or the one site selected).
+  const summaryProjects = activeProjectId === 'all' ? projects : projects.filter(p => p.id === activeProjectId);
+  const summaryTasks = activeProjectId === 'all' ? tasks : tasks.filter(t => t.projectId === activeProjectId);
+  const summaryLabor = activeProjectId === 'all' ? labor : labor.filter(l => l.projectId === activeProjectId);
+  const summarySnags = activeProjectId === 'all' ? snags : snags.filter(s => s.projectId === activeProjectId);
+  const summaryBudget = summaryProjects.reduce((s, p) => s + p.budget, 0);
+  const summarySpent = summaryProjects.reduce((s, p) => s + p.spent, 0);
+  const summaryUtilization = summaryBudget > 0 ? Math.round((summarySpent / summaryBudget) * 100) : 0;
+  const summaryDone = summaryTasks.filter(t => t.status === 'completed').length;
+  const summaryDelayed = summaryTasks.filter(t => t.status === 'delayed').length;
+  const summaryActive = summaryTasks.filter(t => t.status === 'in_progress').length;
+  const summaryTaskPct = summaryTasks.length > 0 ? Math.round((summaryDone / summaryTasks.length) * 100) : 0;
+  const summaryWorkers = summaryLabor.reduce((s, l) => s + l.headcount, 0);
+  const summaryWages = summaryLabor.reduce((s, l) => s + (l.totalWage || (l.headcount * l.dailyWageRate)), 0);
+  const summaryOpenSnags = summarySnags.filter(s => s.status !== 'resolved').length;
+  const summaryScope = activeProjectId === 'all' ? null : projects.find(p => p.id === activeProjectId);
 
   return (
     <div className="space-y-6 pb-16 animate-fadeIn">
@@ -264,6 +286,140 @@ export const ModulesPortalView: React.FC = () => {
               );
             })}
           </div>
+        </div>
+      </div>
+
+      {/* Executive Summary — key numbers from the Executive Overview */}
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 flex flex-wrap items-center gap-2">
+            <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
+            <span>{language === 'ur' ? 'ایگزیکٹو خلاصہ' : 'Executive Summary'}</span>
+            <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 normal-case font-sans font-semibold">
+              {summaryScope ? summaryScope.code : (language === 'ur' ? 'تمام سائٹس' : 'All Sites')}
+            </span>
+            {summaryOpenSnags > 0 && (
+              <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 normal-case font-sans font-semibold flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {summaryOpenSnags} {language === 'ur' ? 'کھلے نقائص' : 'open snags'}
+              </span>
+            )}
+          </h2>
+          <button
+            onClick={() => goTo('overview')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+          >
+            <span>{language === 'ur' ? 'مکمل ایگزیکٹو رپورٹ دیکھیں' : 'View Full Executive Overview'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Projects */}
+          <button
+            onClick={() => goTo('projects')}
+            className="text-left bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-blue-300 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                {summaryProjects.length} {language === 'ur' ? 'سائٹس' : 'Sites'}
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-slate-900 tabular-nums">
+              {formatCurrency(summaryBudget, language)}
+            </div>
+            <p className="text-xs text-slate-600 mt-1 font-medium">
+              {language === 'ur' ? 'کل بجٹ — پروجیکٹس' : 'Total Budget — Projects'}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">
+              {summaryProjects.filter(p => p.status === 'in_progress').length} {language === 'ur' ? 'جاری' : 'In Progress'} · {summaryProjects.filter(p => p.status === 'completed').length} {language === 'ur' ? 'مکمل' : 'Completed'}
+            </p>
+          </button>
+
+          {/* Budget / Accounts */}
+          <button
+            onClick={() => goTo('accounts')}
+            className="text-left bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-amber-300 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                {summaryUtilization}% {language === 'ur' ? 'خرچ' : 'Spent'}
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-slate-900 tabular-nums">
+              {formatCurrency(summarySpent, language)}
+            </div>
+            <p className="text-xs text-slate-600 mt-1 font-medium">
+              {language === 'ur' ? 'اب تک کا خرچ' : 'Spent So Far'}
+            </p>
+            <div className="mt-3">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(100, summaryUtilization)}%` }} />
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5">
+                {language === 'ur' ? 'بقایا:' : 'Balance:'} {formatCurrency(Math.max(0, summaryBudget - summarySpent), language)}
+              </p>
+            </div>
+          </button>
+
+          {/* Tasks / Progress */}
+          <button
+            onClick={() => goTo('tasks')}
+            className="text-left bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-indigo-300 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                <Kanban className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
+                {summaryTaskPct}% {language === 'ur' ? 'مکمل' : 'Complete'}
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-slate-900 tabular-nums">
+              {summaryDone} / {summaryTasks.length}
+            </div>
+            <p className="text-xs text-slate-600 mt-1 font-medium">
+              {language === 'ur' ? 'ٹاسکس مکمل' : 'Tasks Completed'}
+            </p>
+            <div className="mt-3">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${summaryTaskPct}%` }} />
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5">
+                {summaryActive} {language === 'ur' ? 'فعال' : 'Active'} / {summaryDelayed} {language === 'ur' ? 'تاخیر' : 'Delayed'}
+              </p>
+            </div>
+          </button>
+
+          {/* Manpower */}
+          <button
+            onClick={() => goTo('manpower', undefined, 'all')}
+            className="text-left bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-emerald-300 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <HardHat className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {summaryWorkers} {language === 'ur' ? 'موجود' : 'Present'}
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-slate-900 tabular-nums">
+              {formatCurrency(summaryWages, language)}
+            </div>
+            <p className="text-xs text-slate-600 mt-1 font-medium">
+              {language === 'ur' ? 'یومیہ اجرت (تخمینہ)' : 'Est. Daily Wages'}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">
+              {language === 'ur' ? 'افرادی قوت — حاضری و تنخواہ' : 'Manpower — attendance & salary'}
+            </p>
+          </button>
         </div>
       </div>
 

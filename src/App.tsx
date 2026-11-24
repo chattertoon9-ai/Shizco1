@@ -105,7 +105,7 @@ const MainAppContent: React.FC = () => {
 
       {/* Demo Mode banner — sample data only, separate from real company data */}
       {isDemoMode && (
-        <div className="w-full bg-amber-500 text-white shadow-md">
+        <div className="w-full bg-amber-500 text-white shadow-md print:hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs sm:text-sm font-bold flex items-center gap-2">
               <span className="px-2 py-0.5 rounded bg-white/20 text-[10px] font-mono font-bold tracking-wider">DEMO MODE</span>
