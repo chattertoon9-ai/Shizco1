@@ -567,7 +567,7 @@ export const TaxComplianceView: React.FC = () => {
 
         {/* Sub-Tabs Navigation */}
         <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          <div className="flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
             <button
               onClick={() => setActiveSubTab('invoices')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
@@ -793,11 +793,11 @@ export const TaxComplianceView: React.FC = () => {
 
           {/* Table Search & Filter */}
           <div className="bg-slate-900/80 border border-blue-900/20 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
                 value={activeProjectId}
                 onChange={(e) => setActiveProjectId(e.target.value)}
-                className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                className="min-w-0 max-w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
               >
                 <option value="all">All Projects</option>
                 {projects.map(p => (
@@ -808,7 +808,7 @@ export const TaxComplianceView: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                className="min-w-0 max-w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
               >
                 <option value="all">All Statuses</option>
                 <option value="issued">Issued</option>
@@ -1564,11 +1564,11 @@ export const TaxComplianceView: React.FC = () => {
 
       {/* MODAL 2: PRINT / PREVIEW OFFICIAL TAX INVOICE */}
       {selectedInvoiceForPrint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
-          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full max-w-[210mm] shadow-2xl p-4 sm:p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
+          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full min-w-0 max-w-[210mm] shadow-2xl p-4 sm:p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
             {/* Top Bar with Print & Close */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-200 print:hidden">
+              <span className="min-w-0 truncate text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
                 Official Tax Invoice Document (A4)
               </span>
               <div className="flex items-center gap-2">
@@ -1611,6 +1611,7 @@ export const TaxComplianceView: React.FC = () => {
               <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:gap-6">
                 <div className="relative flex-1 border border-black">
                   <span className="absolute -top-2.5 left-2 bg-white px-1.5 text-xs font-bold">Customer</span>
+                  <div className="overflow-x-auto">
                   <table className="print-form-table w-full text-xs">
                     <tbody>
                       <tr>
@@ -1642,10 +1643,12 @@ export const TaxComplianceView: React.FC = () => {
                       </tr>
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 <div className="relative w-full border border-black sm:w-[38%]">
                   <span className="absolute -top-2.5 left-2 bg-white px-1.5 text-xs font-bold">Misc</span>
+                  <div className="overflow-x-auto">
                   <table className="print-form-table w-full text-xs">
                     <tbody>
                       <tr>
@@ -1670,11 +1673,12 @@ export const TaxComplianceView: React.FC = () => {
                       </tr>
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
 
               {/* Items table with totals */}
-              <div className="mt-6">
+              <div className="mt-6 overflow-x-auto">
                 <table className="print-form-table w-full border border-black text-xs">
                   <thead>
                     <tr>
@@ -1765,11 +1769,11 @@ export const TaxComplianceView: React.FC = () => {
 
       {/* MODAL: PRINT / PREVIEW OFFICIAL RFQ TENDER (A4) */}
       {selectedRFQForPrint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
-          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full max-w-[210mm] shadow-2xl p-4 sm:p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn overflow-y-auto print:static print:inset-auto print:p-0 print:m-0 print:bg-transparent print:backdrop-blur-none print:block print:overflow-visible">
+          <div className="printable-a4-document a4-print-document bg-white text-slate-900 rounded-2xl w-full min-w-0 max-w-[210mm] shadow-2xl p-4 sm:p-8 my-8 print:p-0 print:m-0 print:w-full print:max-w-none print:min-w-full print:shadow-none print:rounded-none print:border-none">
             {/* Top Bar with Print & Close */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-200 print:hidden">
+              <span className="min-w-0 truncate text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
                 Official Quotation Document (A4)
               </span>
               <div className="flex items-center gap-2">
@@ -1801,6 +1805,7 @@ export const TaxComplianceView: React.FC = () => {
             <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
               <div className="flex-1">
                 <div className="border border-black bg-[#eda87c] px-2 py-1 text-xs font-bold">Quotation To</div>
+                <div className="overflow-x-auto">
                 <table className="print-form-table w-full border border-black text-xs">
                   <tbody>
                     <tr>
@@ -1817,10 +1822,12 @@ export const TaxComplianceView: React.FC = () => {
                     </tr>
                   </tbody>
                 </table>
+                </div>
               </div>
 
               <div className="w-full sm:w-[42%]">
                 <div className="border border-black bg-[#eda87c] px-2 py-1 text-center text-xs font-bold">Quotation Details</div>
+                <div className="overflow-x-auto">
                 <table className="print-form-table w-full border border-black text-xs">
                   <tbody>
                     <tr>
@@ -1841,6 +1848,7 @@ export const TaxComplianceView: React.FC = () => {
                     </tr>
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
 
@@ -1857,7 +1865,7 @@ export const TaxComplianceView: React.FC = () => {
             </p>
 
             {/* Items table */}
-            <div className="mt-4">
+            <div className="mt-4 overflow-x-auto">
               <table className="print-form-table w-full border border-black text-xs">
                 <thead>
                   <tr className="bg-[#8fb4d9]">

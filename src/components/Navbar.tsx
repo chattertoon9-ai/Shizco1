@@ -226,14 +226,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 text-slate-900 shadow-sm shadow-slate-900/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Bar: 3 zones */}
-          <div className="flex items-center justify-between gap-4 lg:gap-6 h-16">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2 min-h-16">
 
             {/* Zone 1: Brand Wordmark with Al Asad Constructors Logo */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex min-w-0 items-center gap-3">
               <a
                 href="#home"
                 onClick={(e) => { e.preventDefault(); navigate('home'); }}
-                className="flex items-center gap-2.5 group"
+                className="flex min-w-0 items-center gap-2.5 group"
               >
                 <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-white flex items-center justify-center shrink-0 shadow-sm group-hover:border-blue-400 transition-colors p-0.5">
                   <img
@@ -242,8 +242,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors leading-tight whitespace-nowrap">
+                <div className="flex min-w-0 flex-col text-left">
+                  <span className="min-w-0 truncate text-base sm:text-lg font-bold tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors leading-tight whitespace-nowrap">
                     {language === 'ur' ? 'الاسد کنسٹرکٹرز' : 'Al Asad Constructors'}
                   </span>
                   <span className="text-[10px] text-emerald-600 font-mono tracking-wider uppercase leading-none mt-0.5 flex items-center gap-1">
@@ -333,7 +333,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </nav>
 
             {/* Zone 3: Actions (Notifications, Site AI, Role Switcher, Language, Primary CTA) */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <div className="ml-auto flex items-center gap-2 sm:gap-2.5 shrink-0">
               {/* Offline Access & Cloud Sync Center Indicator */}
               <button
                 onClick={() => setIsSyncModalOpen(true)}
