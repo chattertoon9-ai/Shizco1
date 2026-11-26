@@ -260,6 +260,7 @@ interface ProjectContextType {
   deleteTaxInvoice: (id: string) => void;
 
   addRFQ: (rfq: Omit<RFQDocument, 'id'>) => void;
+  updateRFQ: (id: string, updates: Partial<Omit<RFQDocument, 'id'>>) => void;
   updateRFQStatus: (id: string, status: RFQDocument['status']) => void;
   addQuotationToRFQ: (rfqId: string, quote: Omit<import('../types').RFQQuotation, 'id'>) => void;
   deleteRFQ: (id: string) => void;
@@ -1603,6 +1604,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setRfqs(prev => [newRfq, ...prev]);
   };
 
+  const updateRFQ = (id: string, updates: Partial<Omit<RFQDocument, 'id'>>) => {
+    setRfqs(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+  };
+
   const updateRFQStatus = (id: string, status: RFQDocument['status']) => {
     setRfqs(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
@@ -1782,6 +1787,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateTaxInvoiceStatus,
         deleteTaxInvoice,
         addRFQ,
+        updateRFQ,
         updateRFQStatus,
         addQuotationToRFQ,
         deleteRFQ,

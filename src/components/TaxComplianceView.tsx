@@ -60,6 +60,7 @@ export const TaxComplianceView: React.FC = () => {
     updateTaxInvoiceStatus,
     deleteTaxInvoice,
     addRFQ,
+    updateRFQ,
     updateRFQStatus,
     addQuotationToRFQ,
     deleteRFQ,
@@ -76,6 +77,7 @@ export const TaxComplianceView: React.FC = () => {
   // Modals state
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const [isNewRFQOpen, setIsNewRFQOpen] = useState(false);
+  const [editingRfq, setEditingRfq] = useState<RFQDocument | null>(null);
   const [selectedInvoiceForPrint, setSelectedInvoiceForPrint] = useState<TaxInvoice | null>(null);
   const [selectedRFQForPrint, setSelectedRFQForPrint] = useState<RFQDocument | null>(null);
   const [selectedRFQForQuotes, setSelectedRFQForQuotes] = useState<RFQDocument | null>(null);
@@ -135,6 +137,7 @@ export const TaxComplianceView: React.FC = () => {
   // New RFQ Form State
   const [rfqProject, setRfqProject] = useState(projects[0]?.id || 'proj-01');
   const [rfqNumber, setRfqNumber] = useState(`AAC-RFQ-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`);
+  const [rfqIssueDate, setRfqIssueDate] = useState(new Date().toISOString().split('T')[0]);
   const [rfqTitle, setRfqTitle] = useState('');
   // Quotation print fields — client / site default to the selected project;
   // quoteNo / subject fall back to rfqNumber / title in print when blank.
@@ -362,30 +365,78 @@ export const TaxComplianceView: React.FC = () => {
     setInvNumber(`AAC-INV-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
   };
 
+  const DEFAULT_RFQ_LINE = {
+    description: 'Ready Mix Concrete 3000 PSI',
+    specification: 'Standard Mix Class B, 1:2:4, max aggregate 20mm',
+    quantity: 100,
+    unit: 'Cu. M',
+    estimatedRate: 12500,
+    taxCategory: 'fbr_goods_18' as const
+  };
+
+  // Naye RFQ ke liye form saaf kar do (edit ke baad bhi saaf mile).
+  const resetRfqForm = () => {
+    setEditingRfq(null);
+    setRfqNumber(`AAC-RFQ-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`);
+    setRfqProject(projects[0]?.id || 'proj-01');
+    setRfqTitle('');
+    setRfqCategory('ready_mix');
+    setRfqDeadline(new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0]);
+    setRfqBudget(1500000);
+    setRfqTerms('All deliveries must accompany mill test certificates and FBR active filer tax invoice.');
+    setRfqAttnTo('');
+    setRfqClientName(projects[0]?.client || '');
+    setRfqProjectSite(projects[0]?.location || '');
+    setRfqQuoteNo('');
+    setRfqSubject('');
+    setRfqIssueDate(new Date().toISOString().split('T')[0]);
+    setRfqLines([{ ...DEFAULT_RFQ_LINE }]);
+  };
+
+  // Maujooda RFQ edit ke liye form us ki values se bhar do.
+  const openEditRFQ = (rfq: RFQDocument) => {
+    setEditingRfq(rfq);
+    setRfqNumber(rfq.rfqNumber);
+    setRfqProject(rfq.projectId);
+    setRfqTitle(rfq.title);
+    setRfqCategory(rfq.category);
+    setRfqDeadline(rfq.submissionDeadline);
+    setRfqBudget(rfq.estimatedBudget);
+    setRfqTerms(rfq.termsAndConditions);
+    setRfqAttnTo(rfq.attnTo || '');
+    setRfqClientName(rfq.clientName || '');
+    setRfqProjectSite(rfq.projectSite || '');
+    setRfqQuoteNo(rfq.quoteNo || '');
+    setRfqSubject(rfq.subject || '');
+    setRfqIssueDate(rfq.issueDate);
+    setRfqLines(rfq.lineItems.map(l => ({ description: l.description, specification: l.specification, quantity: l.quantity, unit: l.unit, estimatedRate: l.estimatedRate, taxCategory: l.taxCategory })));
+    setIsNewRFQOpen(true);
+  };
+
   const handleCreateRFQ = (e: React.FormEvent) => {
     e.preventDefault();
     if (!rfqTitle.trim()) return;
 
-    const mappedLines: RFQLineItem[] = rfqLines.map((l, idx) => ({
-      id: `line-${idx}-${Date.now()}`,
-      description: l.description,
-      specification: l.specification,
-      quantity: l.quantity,
-      unit: l.unit,
-      estimatedRate: l.estimatedRate,
-      taxCategory: l.taxCategory
-    }));
+    const mappedLines: RFQLineItem[] = rfqLines
+      .filter((l) => l.description.trim() !== '')
+      .map((l, idx) => ({
+        id: `line-${idx}-${Date.now()}`,
+        description: l.description,
+        specification: l.specification,
+        quantity: l.quantity,
+        unit: l.unit,
+        estimatedRate: l.estimatedRate,
+        taxCategory: l.taxCategory
+      }));
 
-    addRFQ({
+    const payload = {
       rfqNumber: rfqNumber.trim(),
       projectId: rfqProject,
       title: rfqTitle.trim(),
       category: rfqCategory,
-      issueDate: new Date().toISOString().split('T')[0],
+      issueDate: rfqIssueDate,
       submissionDeadline: rfqDeadline,
-      status: 'open',
       lineItems: mappedLines,
-      quotations: [],
       estimatedBudget: Number(rfqBudget) || 1000000,
       termsAndConditions: rfqTerms.trim(),
       attnTo: rfqAttnTo.trim() || undefined,
@@ -393,14 +444,17 @@ export const TaxComplianceView: React.FC = () => {
       projectSite: rfqProjectSite.trim() || undefined,
       quoteNo: rfqQuoteNo.trim() || undefined,
       subject: rfqSubject.trim() || undefined
-    });
+    };
+
+    if (editingRfq) {
+      // Edit: status, quotations aur awarded vendor barqarar rehte hain.
+      updateRFQ(editingRfq.id, payload);
+    } else {
+      addRFQ({ ...payload, status: 'open', quotations: [] });
+    }
 
     setIsNewRFQOpen(false);
-    setRfqTitle('');
-    setRfqAttnTo('');
-    setRfqQuoteNo('');
-    setRfqSubject('');
-    setRfqNumber(`AAC-RFQ-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`);
+    resetRfqForm();
   };
 
   const handleAddQuoteSubmit = (e: React.FormEvent) => {
@@ -646,7 +700,7 @@ export const TaxComplianceView: React.FC = () => {
 
             {activeSubTab === 'rfqs' && (
               <button
-                onClick={() => setIsNewRFQOpen(true)}
+                onClick={() => { resetRfqForm(); setIsNewRFQOpen(true); }}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -1039,6 +1093,13 @@ export const TaxComplianceView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openEditRFQ(rfq)}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium rounded-lg cursor-pointer"
+                        title="Edit RFQ"
+                      >
+                        Edit
+                      </button>
                       <button
                         onClick={() => setSelectedRFQForPrint(rfq)}
                         className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium rounded-lg cursor-pointer"
@@ -1965,7 +2026,7 @@ export const TaxComplianceView: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5 text-emerald-400" />
-                <span>Issue Request for Quotation (RFQ)</span>
+                <span>{editingRfq ? 'Edit RFQ' : 'Issue Request for Quotation (RFQ)'}</span>
               </h3>
               <button
                 onClick={() => setIsNewRFQOpen(false)}
@@ -1976,7 +2037,7 @@ export const TaxComplianceView: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateRFQ} className="space-y-4 pt-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-400 mb-1">RFQ Number</label>
                   <input
@@ -2005,6 +2066,16 @@ export const TaxComplianceView: React.FC = () => {
                       <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">Issue Date</label>
+                  <input
+                    type="date"
+                    value={rfqIssueDate}
+                    onChange={(e) => setRfqIssueDate(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
+                    required
+                  />
                 </div>
               </div>
 
@@ -2126,10 +2197,137 @@ export const TaxComplianceView: React.FC = () => {
                 />
               </div>
 
+              {/* RFQ Line Items — jo entry ho wahi print view mein aaye */}
+              <div className="space-y-3 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-300">RFQ Line Items:</span>
+                  <button
+                    type="button"
+                    onClick={() => setRfqLines([...rfqLines, {
+                      description: '',
+                      specification: '',
+                      quantity: 1,
+                      unit: 'Units',
+                      estimatedRate: 0,
+                      taxCategory: 'fbr_goods_18'
+                    }])}
+                    className="text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer"
+                  >
+                    + Add Line Item
+                  </button>
+                </div>
+
+                {rfqLines.map((line, idx) => (
+                  <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-slate-500 font-mono">Item #{idx + 1}</span>
+                      {rfqLines.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setRfqLines(rfqLines.filter((_, i) => i !== idx))}
+                          className="text-rose-400 hover:text-rose-300 text-xs cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Description"
+                        value={line.description}
+                        onChange={(e) => {
+                          const updated = [...rfqLines];
+                          updated[idx].description = e.target.value;
+                          setRfqLines(updated);
+                        }}
+                        className="bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs"
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="Specification (optional)"
+                        value={line.specification}
+                        onChange={(e) => {
+                          const updated = [...rfqLines];
+                          updated[idx].specification = e.target.value;
+                          setRfqLines(updated);
+                        }}
+                        className="bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">Quantity</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={line.quantity}
+                          onChange={(e) => {
+                            const updated = [...rfqLines];
+                            updated[idx].quantity = Number(e.target.value);
+                            setRfqLines(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs font-mono"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">Unit</label>
+                        <input
+                          type="text"
+                          value={line.unit}
+                          onChange={(e) => {
+                            const updated = [...rfqLines];
+                            updated[idx].unit = e.target.value;
+                            setRfqLines(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">Est. Rate (PKR)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={line.estimatedRate}
+                          onChange={(e) => {
+                            const updated = [...rfqLines];
+                            updated[idx].estimatedRate = Number(e.target.value);
+                            setRfqLines(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs font-mono"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">Tax Category</label>
+                        <select
+                          value={line.taxCategory}
+                          onChange={(e) => {
+                            const updated = [...rfqLines];
+                            updated[idx].taxCategory = e.target.value as any;
+                            setRfqLines(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs"
+                        >
+                          <option value="fbr_goods_18">FBR Goods 18%</option>
+                          <option value="srb_services_13">SRB Services 13%</option>
+                          <option value="exempt">Exempt</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setIsNewRFQOpen(false)}
+                  onClick={() => { setIsNewRFQOpen(false); setEditingRfq(null); }}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 cursor-pointer"
                 >
                   Cancel
@@ -2138,7 +2336,7 @@ export const TaxComplianceView: React.FC = () => {
                   type="submit"
                   className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-lg shadow-emerald-600/30 cursor-pointer"
                 >
-                  Publish RFQ
+                  {editingRfq ? 'Save Changes' : 'Publish RFQ'}
                 </button>
               </div>
             </form>
