@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { translations, formatCurrency } from '../utils/translations';
 import { COMPANY_TAX_PROFILE } from '../data/initialData';
@@ -122,6 +122,15 @@ export const TaxComplianceView: React.FC = () => {
       whtRate: 7.5
     }
   ]);
+
+  // Auto-add row: jab last row ki entry ho jaye to khud aik nayi khali row
+  // aa jaye — user ko "+ Add Line Item" dabana na pare.
+  useEffect(() => {
+    const last = invItems[invItems.length - 1];
+    if (last && last.description.trim() !== '') {
+      setInvItems([...invItems, { description: '', itemType: 'goods', quantity: 1, unit: 'Units', unitPrice: 0, whtRate: 4.5 }]);
+    }
+  }, [invItems]);
 
   // New RFQ Form State
   const [rfqProject, setRfqProject] = useState(projects[0]?.id || 'proj-01');
@@ -307,7 +316,10 @@ export const TaxComplianceView: React.FC = () => {
 
   const handleCreateInvoice = (e: React.FormEvent) => {
     e.preventDefault();
-    const { computedItems, subtotal, totalFbrGst, totalSrbSst, totalWht, grandTotal, netPayable } = calculateInvoiceTotals(invItems);
+    // Khaali (auto-added) rows save na hon — sirf bhari hui rows invoice mein jayein.
+    const filledItems = invItems.filter((item) => item.description.trim() !== '');
+    if (filledItems.length === 0) return;
+    const { computedItems, subtotal, totalFbrGst, totalSrbSst, totalWht, grandTotal, netPayable } = calculateInvoiceTotals(filledItems);
 
     addTaxInvoice({
       invoiceNumber: invNumber.trim(),
@@ -1448,7 +1460,6 @@ export const TaxComplianceView: React.FC = () => {
                           setInvItems(updated);
                         }}
                         className="bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-xs"
-                        required
                       />
 
                       <select
@@ -1700,7 +1711,8 @@ export const TaxComplianceView: React.FC = () => {
                         <td className="border border-black px-2 py-2 text-right font-mono font-semibold">{item.totalAmount.toLocaleString()}</td>
                       </tr>
                     ))}
-                    {Array.from({ length: Math.max(0, 8 - selectedInvoiceForPrint.items.length) }).map((_, i) => (
+                    {/* Bill ki rows + sirf aik extra blank row */}
+                    {Array.from({ length: 1 }).map((_, i) => (
                       <tr key={`blank-${i}`}>
                         <td className="border border-black px-2 py-2.5">&nbsp;</td>
                         <td className="border border-black px-2 py-2.5">&nbsp;</td>
